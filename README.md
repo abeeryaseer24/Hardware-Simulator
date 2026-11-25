@@ -1,6 +1,6 @@
 # Benchnote
 
-A free virtual lab for electrical and electronic engineering students. Every experiment is shown fully wired on a breadboard, with an empty board beside it so you can build it yourself and have it checked.
+A free virtual breadboard for electrical and electronic engineering students. Build and test any digital or analog circuit with real chips, parts and bench instruments. The most common lab experiments are included as ready-made examples.
 
 **Live site:** https://abeeryaseer24.github.io/Hardware-Simulator/
 
@@ -8,12 +8,14 @@ A free virtual lab for electrical and electronic engineering students. Every exp
 
 | Section | What it does |
 |---|---|
-| **Digital Lab** | 29 experiments on a digital trainer (switches, LEDs, 7-segment display, clock, pulsers, logic probe) with 30 real 74xx chips. Includes the **K-Map solver** (K-map, truth table, Boolean expression, minterm and maxterm input; minimal SOP/POS with the working). |
-| **Analog Lab** | 25 experiments on an analog trainer with a DC supply (±12 V, two variable outputs), function generator, multimeter, two ammeters, two-channel oscilloscope, switches, constant-current source and potentiometer. |
+| **Digital Lab** | A free digital breadboard: 30 real 74xx chips, switches, LEDs, 7-segment display, clock, pulsers and logic probe. 29 common experiments included as ready-made examples. Also holds the **K-Map solver** (K-map, truth table, Boolean expression, minterm and maxterm input). |
+| **Analog Lab** | A free analog breadboard with a DC supply (±12 V, two variable outputs), function generator, multimeter, two ammeters, two-channel oscilloscope, switches, constant-current source and potentiometer. 25 common experiments included as ready-made examples. |
 | **Tools** | Resistor and capacitor codes, LED resistor, Ohm's law and dividers, RC/RLC, op-amp gain, 555 timer, number bases and codes. |
 | **Learn** | Breadboard basics with a pinout library (inputs and outputs listed for every chip), a printable revision sheet, and a free-form schematic sandbox. |
 
-## How each experiment works
+## Ready-made examples
+
+The free breadboard is the main tool. On top of it, common lab experiments come pre-built. Each example has:
 
 1. **Overview** – aim, theory, procedure, circuit diagram or truth table, components and expected results.
 2. **Reference build** – the circuit wired on the breadboard and running. Step through the build one part or wire at a time.

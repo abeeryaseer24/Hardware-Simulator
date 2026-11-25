@@ -86,9 +86,9 @@ function open(e, wantView) {
   tabs.querySelector('[data-view="overview"]').hidden = !e;
   tabs.querySelector('[data-view="reference"]').hidden = !e;
   if (!e) {
-    $('#crumbGroup').textContent = 'Free build';
-    $('#title').textContent = 'Free build';
-    $('#aim').textContent = 'An empty analog trainer. Place parts from the Parts tab, wire them to the supply and instruments, and watch the meters and scope.';
+    $('#crumbGroup').textContent = 'Free breadboard';
+    $('#title').textContent = 'Free breadboard';
+    $('#aim').textContent = 'Build any analog circuit you like. Tap parts onto the breadboard, drag wires to the supply and instruments, and read the meters and scope.';
     $('#split').classList.add('ref-hidden');
     $('#showRef').hidden = true; $('#hideRef').hidden = true;
   } else {
@@ -120,6 +120,7 @@ function open(e, wantView) {
   document.querySelector('[data-mt="steps"]').hidden = !e;
   myTab(e ? 'steps' : 'parts');
   refTab('steps');
+  document.querySelector('#tabs [data-view="practice"]').innerHTML = e ? '<span class="num">3</span>Practice' : 'Breadboard';
   setView(wantView || (e ? 'overview' : 'practice'));
 }
 
@@ -587,9 +588,9 @@ document.addEventListener('keydown', (e) => {
 // ------------------------------------------------------------------ boot
 (function boot() {
   const q = new URLSearchParams(location.search);
-  if (q.get('free')) return open(null, 'practice');
-  const e = AEXPERIMENTS.find(x => x.id === q.get('exp')) || AEXPERIMENTS[0];
+  const e = AEXPERIMENTS.find(x => x.id === q.get('exp'));
   const v = q.get('view');
-  open(e, ['overview', 'reference', 'practice'].includes(v) ? v : 'overview');
+  if (e) open(e, ['overview', 'reference', 'practice'].includes(v) ? v : 'overview');
+  else open(null, 'practice'); // the free breadboard is the front door
 })();
 void parsePoint;

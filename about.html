@@ -17,29 +17,32 @@
   <main class="wrap about">
     <header class="page-head">
       <h1>About Benchnote</h1>
-      <p>Lab time is short and a trainer board is not always in reach. Benchnote lets you rehearse every experiment at home, so that in the lab you are checking results instead of hunting for a missing ground wire.</p>
+      <p>Lab time is short and a trainer board is not always in reach. Benchnote puts a breadboard and a full set of bench instruments in your browser, so you can build and test any circuit whenever you want: before a lab, for a project idea, or just to see what happens.</p>
     </header>
 
     <div class="about-grid">
       <section>
-        <h2>What it covers</h2>
+        <h2>The free breadboard</h2>
+        <p>This is the heart of Benchnote. Open the <a href="digital.html">digital</a> or <a href="analog.html">analog</a> breadboard and build whatever you like.</p>
         <ul class="g-list">
-          <li><strong>Digital Lab:</strong> 29 experiments on a digital trainer with 30 TTL chips, from basic gates to counters and shift registers.</li>
-          <li><strong>Analog Lab:</strong> DC network theorems, RC and RLC circuits, diodes, transistors and op-amps on an analog trainer with a power supply, function generator, multimeter, ammeters and a two-channel oscilloscope.</li>
-          <li><strong>K-Map Solver:</strong> minimal SOP and POS for two to six variables, with prime implicants and the tabular working.</li>
-          <li><strong>Tools and notes:</strong> calculators, breadboard basics and a printable revision sheet.</li>
+          <li><strong>Digital:</strong> 30 TTL chips from gates to counters and shift registers, with 8 switches, 8 LEDs, a 7-segment display, a clock, pulsers and a logic probe. The trainer tells you about unpowered chips, floating inputs, shorts and outputs fighting each other.</li>
+          <li><strong>Analog:</strong> resistors, capacitors, inductors, diodes, LEDs, Zeners, transistors and the 741 op-amp, with a ±12 V supply, two variable supplies, a function generator, a multimeter, two ammeters, a two-channel oscilloscope, switches, a current source and a potentiometer.</li>
+          <li>Tap a part onto a hole, drag wires between any two points, and your board is saved on your device.</li>
         </ul>
 
-        <h2>How each experiment works</h2>
-        <ol class="g-list">
-          <li><strong>Overview:</strong> aim, theory, the circuit diagram and the expected results.</li>
-          <li><strong>Reference build:</strong> the circuit already wired on a breadboard. Use the switches and instruments, and step through the wiring one connection at a time.</li>
-          <li><strong>Practice:</strong> an empty breadboard next to the reference. Build it yourself, then press Check to have your circuit tested.</li>
-        </ol>
+        <h2>Ready-made examples</h2>
+        <p>The most common lab experiments are already built for you as examples: logic gates, adders, decoders, flip-flops and counters on the digital side; Ohm's law, network theorems, filters, rectifiers, transistors and op-amps on the analog side. Each one shows the aim and theory, the circuit wired step by step, and an empty board where you can build it yourself and have it checked. They are a starting point, not a limit: anything you can wire, you can test.</p>
+
+        <h2>Also included</h2>
+        <ul class="g-list">
+          <li><strong>K-Map solver</strong> for two to six variables, with prime implicants and the tabular working.</li>
+          <li><strong>Tools</strong> for colour codes, dividers, filters, op-amp gain, the 555 timer and number bases.</li>
+          <li><strong>Breadboard basics</strong> with a pinout for every chip, and a printable <strong>revision sheet</strong>.</li>
+        </ul>
 
         <h2>How the simulation works</h2>
-        <p>The digital trainer reduces the breadboard to electrical nodes and evaluates every chip until the circuit settles, so it can tell you about unpowered chips, floating inputs and outputs fighting each other. The analog trainer solves the circuit with modified nodal analysis and Newton–Raphson iteration, the same family of methods SPICE uses, with simplified device models.</p>
-        <p class="note">Results are close to a real bench but not identical. Real components have tolerances, and real wires come loose. Use Benchnote to understand and rehearse, and trust your lab instruments on the day.</p>
+        <p>The digital trainer reduces the breadboard to electrical nodes and evaluates every chip until the circuit settles. The analog trainer solves the circuit with modified nodal analysis and Newton–Raphson iteration, the same family of methods SPICE uses, with simplified device models.</p>
+        <p class="note">Results are close to a real bench but not identical. Real components have tolerances and real wires come loose. Use Benchnote to understand and rehearse, and trust your lab instruments on the day.</p>
       </section>
 
       <aside class="about-card">

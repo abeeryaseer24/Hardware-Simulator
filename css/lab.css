@@ -286,3 +286,6 @@ body.lab-page { overflow: hidden; }
   .ov { padding: 16px 14px 30px; }
   .lab-tabs button { padding: 9px 9px 10px; font-size: .84rem; }
 }
+.side-head { font-size: .82rem; font-weight: 650; color: var(--ink); margin: 6px 8px 2px; }
+.side-sub { font-size: .76rem; color: var(--muted); margin: 0 8px 10px; line-height: 1.45; }
+.side-free { border-style: solid; border-color: var(--brand); }
