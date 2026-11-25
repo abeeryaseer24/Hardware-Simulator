@@ -289,3 +289,30 @@ body.lab-page { overflow: hidden; }
 .side-head { font-size: .82rem; font-weight: 650; color: var(--ink); margin: 6px 8px 2px; }
 .side-sub { font-size: .76rem; color: var(--muted); margin: 0 8px 10px; line-height: 1.45; }
 .side-free { border-style: solid; border-color: var(--brand); }
+
+/* exam + fault modes */
+.side-exam { border-style: dashed; border-color: var(--rule-strong); }
+.side-exam svg { color: var(--accent); }
+.side-exam.is-active { border-style: solid; border-color: var(--accent); background: var(--accent-tint); }
+.mode-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.mode-win { font-weight: 700; color: var(--ok); margin: 0 0 6px; }
+.exam-head { display: flex; align-items: center; gap: 8px; padding: 12px; margin-bottom: 12px; background: #0c1a12; border-radius: 10px; }
+.exam-clock { font: 600 1.7rem var(--f-mono); color: #7dff9a; letter-spacing: .04em; flex: 1; }
+.exam-clock.low { color: #ff6b5e; }
+.exam-min { width: 92px; height: 32px; font-size: .8rem; }
+.task-card { border: 1px solid var(--rule); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.task-card h3 { margin-bottom: 4px; }
+.task-card p { font-size: .88rem; color: var(--ink-2); }
+.task-card .schem { margin: 6px 0; width: 100%; height: auto; background: #0e1f19; border-radius: 8px; padding: 8px; }
+.exam-score { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; margin: 10px 0; justify-items: start; }
+.exam-score strong { font-size: 1.15rem; }
+.exam-score.pass { background: var(--ok-tint); border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent); }
+.exam-score.fail { background: var(--bad-tint); border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent); }
+.hint-box { margin-top: 10px; font-size: .86rem; }
+.hint-box summary { cursor: pointer; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.task-list { margin: 0; padding-left: 1.1em; font-size: .86rem; color: var(--ink-2); }
+
+/* practice breadboard: one full-width bench */
+body[data-workbench="1"] .lab { grid-template-columns: minmax(0, 1fr); }
+body[data-workbench="1"] .lab-side, body[data-workbench="1"] #tabs, body[data-workbench="1"] .side-toggle { display: none !important; }
+body[data-workbench="1"] .lab-head { padding-bottom: 12px; }

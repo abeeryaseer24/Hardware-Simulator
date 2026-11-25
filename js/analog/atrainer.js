@@ -1,5 +1,6 @@
 // Analog trainer: breadboard + bench instruments, compiled into an MNA circuit.
 import { Circuit } from './engine.js';
+import { CHIPS } from '../digital/chips.js';
 import { COLS, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, colX, holeId } from '../digital/model.js';
 
 export { COLS, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, colX, holeId };
@@ -73,15 +74,34 @@ export const PARTS = {
   NPN: { name: 'NPN transistor BC547', leads: 3 },
   PNP: { name: 'PNP transistor BC557', leads: 3 },
   OA: { name: 'Op-amp µA741', leads: 8 },
+  IC: { name: 'Logic chip', leads: 0 },
+  BD139: { name: 'Power transistor BD139 (NPN)', leads: 3 },
+  IRF540: { name: 'MOSFET IRF540 (N-channel)', leads: 3 },
+  LM358: { name: 'Dual op-amp LM358', leads: 8 },
+  NE555: { name: 'Timer NE555', leads: 8 },
+  LM7805: { name: 'Regulator LM7805 (+5 V)', leads: 3 },
+};
+// 8-pin DIP parts sit across the channel; 3-lead parts sit in one row
+export const DIP8 = ['OA', 'LM358', 'NE555'];
+export const THREE = ['NPN', 'PNP', 'BD139', 'IRF540', 'LM7805'];
+export const LEG_NAMES = { NPN: ['C', 'B', 'E'], PNP: ['C', 'B', 'E'], BD139: ['E', 'C', 'B'], IRF540: ['G', 'D', 'S'], LM7805: ['IN', 'G', 'OUT'] };
+export const DIP_PINS = {
+  OA: ['NULL', 'IN−', 'IN+', 'V−', 'NULL', 'OUT', 'V+', 'NC'],
+  LM358: ['OUT1', 'IN1−', 'IN1+', 'GND', 'IN2+', 'IN2−', 'OUT2', 'V+'],
+  NE555: ['GND', 'TRIG', 'OUT', 'RESET', 'CTRL', 'THR', 'DIS', 'VCC'],
 };
 export const LED_RGB = { red: '#ff3b30', green: '#2fe36b', yellow: '#ffd60a', blue: '#3a8bff', white: '#f4f7ff' };
 
 // 741 pins: 1 offset, 2 IN−, 3 IN+, 4 V−, 5 offset, 6 OUT, 7 V+, 8 NC (pin 1 bottom-left)
-export function opampPin(col, pin) { return pin <= 4 ? holeId('f', col + pin - 1) : holeId('e', col + (8 - pin)); }
+export function dipPin(col, pin, n) { const half = n / 2; return pin <= half ? holeId('f', col + pin - 1) : holeId('e', col + (n - pin)); }
+export function opampPin(col, pin) { return dipPin(col, pin, 8); }
+export const isDip = (type) => DIP8.includes(type) || type === 'IC';
+export const dipCount = (p) => (p.type === 'IC' ? CHIPS[p.chip].pins : 8);
 export function partHoles(p) {
-  if (p.type === 'OA') return [1, 2, 3, 4, 5, 6, 7, 8].map(n => opampPin(p.col, n));
+  if (isDip(p.type)) { const n = dipCount(p); return Array.from({ length: n }, (_, i) => dipPin(p.col, i + 1, n)); }
   return p.holes;
 }
+export { CHIPS };
 export function partLabel(p) {
   const fmt = (v, u) => {
     const a = Math.abs(v); const steps = [[1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'µ'], [1e-9, 'n'], [1e-12, 'p']];
@@ -98,6 +118,12 @@ export function partLabel(p) {
     case 'NPN': return 'BC547';
     case 'PNP': return 'BC557';
     case 'OA': return 'µA741';
+    case 'BD139': return 'BD139';
+    case 'IRF540': return 'IRF540';
+    case 'LM358': return 'LM358';
+    case 'NE555': return 'NE555';
+    case 'LM7805': return 'LM7805';
+    case 'IC': return p.chip.startsWith('74') ? '74LS' + p.chip.slice(2) : 'CD' + p.chip;
   }
   return '';
 }
@@ -134,7 +160,7 @@ export class AnalogTrainer {
     return m;
   }
   nextRef(type) {
-    const prefix = { R: 'R', C: 'C', CE: 'C', L: 'L', D: 'D', LED: 'D', Z: 'D', NPN: 'Q', PNP: 'Q', OA: 'U' }[type];
+    const prefix = { R: 'R', C: 'C', CE: 'C', L: 'L', D: 'D', LED: 'D', Z: 'D', NPN: 'Q', PNP: 'Q', OA: 'U', BD139: 'Q', IRF540: 'Q', LM358: 'U', NE555: 'U', LM7805: 'U', IC: 'U' }[type];
     const used = new Set(this.parts.map(p => p.ref));
     let i = 1;
     while (used.has(prefix + i)) i++;
@@ -142,7 +168,7 @@ export class AnalogTrainer {
   }
   addPart(p) {
     const def = PARTS[p.type];
-    const part = { id: 'p' + this.nextId++, ref: p.ref || this.nextRef(p.type), type: p.type, holes: p.holes, col: p.col, value: p.value ?? def.def, color: p.color || 'red' };
+    const part = { id: 'p' + this.nextId++, ref: p.ref || this.nextRef(p.type), type: p.type, holes: p.holes, col: p.col, chip: p.chip, value: p.value ?? def.def, color: p.color || 'red' };
     this.parts.push(part);
     this.dirty = true;
     return part;
@@ -156,14 +182,14 @@ export class AnalogTrainer {
   serialize() {
     return {
       v: 1,
-      parts: this.parts.map(({ ref, type, holes, col, value, color }) => ({ ref, type, holes, col, value, color })),
+      parts: this.parts.map(({ ref, type, holes, col, chip, value, color }) => ({ ref, type, holes, col, chip, value, color })),
       wires: this.wires.map(({ a, b, color }) => ({ a, b, color })),
       settings: structuredClone(this.settings),
     };
   }
   load(d) {
     this.parts = []; this.wires = [];
-    for (const p of d.parts || []) if (PARTS[p.type]) this.addPart(p);
+    for (const p of d.parts || []) if (PARTS[p.type] && (p.type !== 'IC' || CHIPS[p.chip])) this.addPart(p);
     for (const w of d.wires || []) if (parsePoint(w.a) && parsePoint(w.b)) this.addWire(w.a, w.b, w.color || 'blue');
     this.settings = Object.assign(DEFAULT_SETTINGS(), structuredClone(d.settings || {}));
     this.dirty = true;
@@ -227,10 +253,22 @@ export class AnalogTrainer {
     }
 
     this.partEls = new Map();
+    const c = this.circuit;
+    const behaviors = [];
+
+    const supplyAt = (hole) => {
+      const r = node(hole);
+      if (r === gndRoot) return 0;
+      if (r === node('p12')) return 12;
+      if (r === node('m12')) return -12;
+      if (r === node('var1')) return s.var1;
+      if (r === node('var2')) return s.var2;
+      return null;
+    };
     for (const p of this.parts) {
       const h = partHoles(p);
       const n = h.map(node);
-      if (p.type !== 'OA' && new Set(n).size < n.length) issues.push({ level: 'warn', text: `${p.ref} has two leads in the same strip, so it is shorted out and does nothing.` });
+      if (!isDip(p.type) && new Set(n).size < n.length) issues.push({ level: 'warn', text: `${p.ref} has two leads in the same strip, so it is shorted out and does nothing.` });
       let e = null;
       switch (p.type) {
         case 'R': e = { type: 'R', value: p.value, p: [P(h[0]), P(h[1])] }; break;
@@ -240,6 +278,69 @@ export class AnalogTrainer {
         case 'LED': e = { type: 'LED', color: p.color, p: [P(h[0]), P(h[1])] }; break;
         case 'Z': e = { type: 'Z', vz: p.value, p: [P(h[0]), P(h[1])] }; break;
         case 'NPN': case 'PNP': e = { type: p.type, beta: 150, p: [P(h[1])], terms: [P(h[1]), P(h[0]), P(h[2])] }; break; // holes: C, B, E
+        case 'BD139': e = { type: 'NPN', beta: 100, p: [P(h[2])], terms: [P(h[2]), P(h[1]), P(h[0])] }; break; // holes: E, C, B
+        case 'IRF540': e = { type: 'NMOS', k: 2, vt: 3, p: [P(h[0])], terms: [P(h[0]), P(h[1]), P(h[2])] }; break; // holes: G, D, S
+        case 'LM358': {
+          const vpos = supplyAt(h[7]), vneg = supplyAt(h[3]);
+          if (!s.power || vpos == null || vneg == null || vpos <= vneg) { issues.push({ level: 'warn', text: `${p.ref} (LM358) has no power. Pin 8 goes to a positive supply and pin 4 to GND (or −12 V).` }); break; }
+          const rails = { vlo: vneg + 0.02, vhi: vpos - 1.5 };
+          e = { type: 'OA', ...rails, p: [P(h[1])], terms: [P(h[1]), P(h[2]), P(h[0])] };
+          els.push({ type: 'OA', ...rails, p: [P(h[5])], terms: [P(h[5]), P(h[4]), P(h[6])] });
+          break;
+        }
+        case 'NE555': {
+          if (!s.power || supplyAt(h[7]) == null || node(h[0]) !== gndRoot) { issues.push({ level: 'warn', text: `${p.ref} (555) has no power. Pin 8 goes to a positive supply and pin 1 to GND.` }); break; }
+          const out = { type: 'V', value: 0.1, p: [P(h[0]), P(h[2])], outV: true };
+          const dis = { type: 'R', value: 1e9, p: [P(h[6]), P(h[0])] };
+          els.push(dis, { type: 'R', value: 5000, p: [P(h[7]), P(h[4])] }, { type: 'R', value: 10000, p: [P(h[4]), P(h[0])] });
+          const resetWired = (usage.get(node(h[3])) || 0) > 1;
+          const st = { q: 0 };
+          const V = (hole) => c.voltageAt(P(hole)) ?? 0;
+          behaviors.push(() => {
+            const g = V(h[0]), vcc = V(h[7]) - g, ref = V(h[4]) - g;
+            if (resetWired && V(h[3]) - g < 0.7) st.q = 0;
+            else if (V(h[1]) - g < ref / 2) st.q = 1;
+            else if (V(h[5]) - g > ref) st.q = 0;
+            out.value = st.q ? Math.max(0, vcc - 1.5) : 0.1;
+            dis.value = st.q ? 1e9 : 5;
+          });
+          e = out;
+          break;
+        }
+        case 'IC': {
+          const def = CHIPS[p.chip];
+          const H = (pin) => h[pin - 1];
+          els.push({ type: 'R', value: 2000, p: [P(H(def.vcc)), P(H(def.gnd))] });
+          const drv = {};
+          for (const op of def.out) { drv[op] = { type: 'DRV', value: 0, r: 1e9, p: [P(H(op))] }; els.push(drv[op]); }
+          const chipState = {};
+          const V = (hole) => c.voltageAt(P(hole)) ?? 0;
+          let warned = false;
+          behaviors.push(() => {
+            const g = V(H(def.gnd)), vcc = V(H(def.vcc)) - g;
+            if (vcc < 4) { for (const op of def.out) { drv[op].r = 1e9; drv[op].value = 0; } return; }
+            const read = (pin) => ((usage.get(node(H(pin))) || 0) <= 1 ? 1 : V(H(pin)) - g > 1.4 ? 1 : 0);
+            const o = def.eval(read, chipState);
+            const hi = g + Math.min(vcc - 0.6, 4.4), lo = g + 0.15;
+            for (const op of def.out) { drv[op].r = 30; drv[op].value = o[op] ? hi : lo; }
+            void warned;
+          });
+          if (!s.power || supplyAt(H(def.vcc)) == null || node(H(def.gnd)) !== gndRoot) issues.push({ level: 'warn', text: `${p.ref} (${partLabel(p)}) has no power. Pin ${def.vcc} goes to +5 V and pin ${def.gnd} to GND.` });
+          else if (supplyAt(H(def.vcc)) > 5.5) issues.push({ level: 'bad', text: `${p.ref} (${partLabel(p)}) is on ${supplyAt(H(def.vcc))} V. TTL chips need 5 V; set the supply to 5 V.` });
+          break;
+        }
+        case 'LM7805': {
+          const out = { type: 'V', value: 0, p: [P(h[1]), P(h[2])], outV: true };
+          const draw = { type: 'I', value: 0, p: [P(h[0]), P(h[1])] };
+          els.push(draw);
+          const V = (hole) => c.voltageAt(P(hole)) ?? 0;
+          behaviors.push(() => {
+            out.value = Math.max(0, Math.min(5, V(h[0]) - V(h[1]) - 2));
+            draw.value = Math.max(0, out.cur ?? 0) + 0.005;
+          });
+          e = out;
+          break;
+        }
         case 'OA': {
           const powered = s.power && node(h[6]) === node('p12') && node(h[3]) === node('m12');
           if (!powered) { issues.push({ level: 'warn', text: `${p.ref} (741) has no power. Pin 7 goes to +12 V and pin 4 to −12 V.` }); break; }
@@ -253,8 +354,8 @@ export class AnalogTrainer {
     this.ammEls = amms;
     this.potEls = potEls;
     this.compileIssues = issues;
-    const c = this.circuit;
     c.els = els;
+    c.beforeStep = behaviors.length ? () => behaviors.forEach(f => f()) : null;
     c.dt = this.window / 600;
     c.reset();
     c.dcOperatingPoint();
@@ -301,8 +402,9 @@ export class AnalogTrainer {
   partState(p) {
     const e = this.partEls?.get(p.id);
     if (!e) return null;
-    const V = e.type === 'NPN' || e.type === 'PNP' ? null : e.volt;
-    return { V, I: e.type === 'NPN' || e.type === 'PNP' ? e.ic : e.cur, ib: e.ib };
+    const tr = e.type === 'NPN' || e.type === 'PNP' || e.type === 'NMOS';
+    const V = tr ? null : e.outV ? -e.volt : e.volt;
+    return { V, I: tr ? e.ic : e.cur, ib: e.ib };
   }
 
   // warnings that depend on the live operating point
@@ -319,6 +421,7 @@ export class AnalogTrainer {
     for (const p of this.parts) {
       partHoles(p).forEach((h, i) => {
         if (p.type === 'OA' && ![1, 2, 3, 5, 6].includes(i)) return; // only pins 2, 3, 4, 6, 7 matter
+        if (p.type === 'LM358' || p.type === 'NE555') return; // unused sections and pins are normal
         if ((this.usage.get(this.nodeRoot(h)) || 0) <= 1) out.push({ level: 'info', text: `${p.ref} ${p.type === 'OA' ? 'pin ' + (i + 1) : 'lead ' + (i + 1)} is not connected to anything else.` });
       });
     }

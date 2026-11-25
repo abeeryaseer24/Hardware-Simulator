@@ -1,18 +1,24 @@
 import { mountChrome, toast, $, $$, el, fmtSI, parseSI } from './shared/site.js';
 import { renderSide, bindSideToggle, markDone } from './shared/lab-side.js';
 import { AnalogBench, aBenchToolbar } from './analog/abench.js';
-import { AnalogTrainer, PARTS, LED_RGB, partLabel, partKey, describePoint, fingerprint, DEFAULT_SETTINGS, parsePoint } from './analog/atrainer.js';
+import { AnalogTrainer, PARTS, LED_RGB, partLabel, partKey, describePoint, fingerprint, DEFAULT_SETTINGS, parsePoint, DIP8, THREE, LEG_NAMES, DIP_PINS, CHIPS, isDip } from './analog/atrainer.js';
 import { AWIRE_COLORS } from './analog/aboard.js';
 import { AEXPERIMENTS } from './analog/aexperiments.js';
 import { renderSchematic } from './analog/schematic.js';
+import { pinoutSVG, pinRoles } from './digital/pinout.js';
+import { FAMILIES } from './digital/chips.js';
 
-mountChrome('analog');
+const WORKBENCH = document.body.dataset.workbench === '1';
+mountChrome(WORKBENCH ? 'practice' : 'analog');
 bindSideToggle();
 
 let exp = null;
 let view = 'overview';
 let refSteps = [], stepIndex = 0, stepTimer = null;
 let records = [];
+let mode = 'practice';   // practice | fault | exam
+let fault = null;
+let examTimer = null, examStart = 0, examLimit = 0;
 
 const notify = (m, k) => toast(m, k);
 const refBench = new AnalogBench($('#refHost'), {
@@ -31,7 +37,7 @@ const myBench = new AnalogBench($('#myHost'), {
   onHover: (h, b) => hoverStatus(h, b, $('#myStatus')),
   onChange: (b, why) => {
     if (why === 'tick') { liveMeters(b, $('#myMeters')); drawScope(b, $('#myScope canvas')); renderIssues(); return; }
-    if (why !== 'settings') { renderPracticeSteps(); renderIssues(); $('#saveState').textContent = 'saved on this device'; }
+    if (why !== 'settings') { renderPracticeSteps(); renderIssues(); $('#saveState').textContent = myBench.storeKey ? 'saved on this device' : ''; }
   },
 });
 $('#refTools').append(aBenchToolbar(refBench, { editable: false }));
@@ -40,10 +46,11 @@ $('#myTools').append(aBenchToolbar(myBench, { editable: true }));
 // ------------------------------------------------------------------ sidebar / tabs
 const sideItems = AEXPERIMENTS.map(e => ({ id: e.id, title: e.title, group: e.group, sub: bomShort(e) }));
 function bomShort(e) {
-  const kinds = [...new Set(e.parts.map(p => ({ R: 'R', C: 'C', CE: 'C', L: 'L', D: 'diode', LED: 'LED', Z: 'Zener', NPN: 'BJT', PNP: 'BJT', OA: '741' }[p.type])))];
+  const kinds = [...new Set(e.parts.map(p => ({ R: 'R', C: 'C', CE: 'C', L: 'L', D: 'diode', LED: 'LED', Z: 'Zener', NPN: 'BJT', PNP: 'BJT', OA: '741', BD139: 'BD139', IRF540: 'MOSFET', LM358: 'LM358', NE555: '555', LM7805: '7805' }[p.type])))];
   return kinds.join(', ');
 }
 function drawSide() {
+  $('#examBtn')?.classList.toggle('is-active', mode === 'exam');
   renderSide({ host: $('#expList'), items: sideItems, activeId: exp?.id, filter: $('#search').value, onPick: (i) => open(AEXPERIMENTS.find(e => e.id === i.id)) });
   $('#freeBtn').classList.toggle('is-active', !exp);
 }
@@ -54,8 +61,12 @@ function setView(v) {
   if (!exp && v !== 'practice') v = 'practice';
   view = v;
   $$('#tabs [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
-  $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== v; });
+  const pane = v === 'fault' ? 'practice' : v;
+  $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
   if (v !== 'reference') stopPlay();
+  if (v === 'fault' && mode !== 'fault') enterFault();
+  else if (v !== 'fault' && mode === 'fault') leavePractice();
+  if (mode === 'exam') return;
   const q = new URLSearchParams();
   if (exp) q.set('exp', exp.id); else q.set('free', '1');
   if (v !== 'overview') q.set('view', v);
@@ -78,6 +89,12 @@ function colour(bench) { bench.t.wires.forEach(w => { w.color = bench.board.auto
 
 function open(e, wantView) {
   exp = e;
+  mode = 'practice';
+  stopExamTimer();
+  $('#tabs').hidden = false;
+  $('[data-mt="task"]').hidden = true;
+  $('[data-mt="check"]').hidden = false;
+  $('#tabs [data-view="fault"]').hidden = !e;
   stopPlay();
   records = [];
   drawSide();
@@ -86,9 +103,11 @@ function open(e, wantView) {
   tabs.querySelector('[data-view="overview"]').hidden = !e;
   tabs.querySelector('[data-view="reference"]').hidden = !e;
   if (!e) {
-    $('#crumbGroup').textContent = 'Free breadboard';
-    $('#title').textContent = 'Free breadboard';
-    $('#aim').textContent = 'Build any analog circuit you like. Tap parts onto the breadboard, drag wires to the supply and instruments, and read the meters and scope.';
+    $('#crumbGroup').textContent = WORKBENCH ? 'Every part in one place' : 'Free breadboard';
+    $('#title').textContent = WORKBENCH ? 'Practice breadboard' : 'Free breadboard';
+    $('#aim').textContent = WORKBENCH
+      ? 'Logic chips and analog parts on one board, with a power supply, function generator, meters and scope. Run TTL chips from VAR 1 at 5 V; the function generator makes a good clock.'
+      : 'Build any analog circuit you like. Tap parts onto the breadboard, drag wires to the supply and instruments, and read the meters and scope.';
     $('#split').classList.add('ref-hidden');
     $('#showRef').hidden = true; $('#hideRef').hidden = true;
   } else {
@@ -108,10 +127,7 @@ function open(e, wantView) {
     renderInstruments(refBench, $('#refTry'), e.controls, true);
     renderScopePanel($('#refScope'));
   }
-  myBench.storeKey = 'bn-al-' + (e ? e.id : 'free');
-  myBench.setWindow(e ? e.window : 0.01);
-  if (!myBench.restoreStored()) myBench.load({ parts: [], wires: [], settings: e ? { ...DEFAULT_SETTINGS(), ...structuredClone(e.settings) } : DEFAULT_SETTINGS() });
-  myBench.board.fit();
+  loadPracticeBoard();
   renderParts();
   renderPracticeSteps();
   renderInstruments(myBench, $('#myMeters'), e ? null : null, false);
@@ -125,7 +141,7 @@ function open(e, wantView) {
 }
 
 // ------------------------------------------------------------------ overview
-const PART_NAMES = { R: 'resistor', C: 'ceramic capacitor', CE: 'electrolytic capacitor', L: 'inductor', D: 'diode 1N4007', LED: 'LED', Z: 'Zener diode', NPN: 'NPN transistor BC547', PNP: 'PNP transistor BC557', OA: 'op-amp µA741' };
+const PART_NAMES = { R: 'resistor', C: 'ceramic capacitor', CE: 'electrolytic capacitor', L: 'inductor', D: 'diode 1N4007', LED: 'LED', Z: 'Zener diode', NPN: 'NPN transistor BC547', PNP: 'PNP transistor BC557', OA: 'op-amp µA741', BD139: 'power transistor BD139', IRF540: 'MOSFET IRF540', LM358: 'dual op-amp LM358', NE555: '555 timer', LM7805: '7805 regulator' };
 function bom(e) {
   const map = new Map();
   for (const p of e.parts) {
@@ -181,8 +197,8 @@ function renderOverview(e) {
 function stepText(item, e) {
   if (item.kind === 'part') {
     const p = item.p;
-    if (p.type === 'OA') return `Place the µA741 across the channel with pin 1 at hole f${p.col + 1}`;
-    if (p.type === 'NPN' || p.type === 'PNP') return `Place the ${PART_NAMES[p.type]} with C, B, E in holes ${p.holes.join(', ')}`;
+    if (DIP8.includes(p.type)) return `Place the ${partLabel(p)} across the channel with pin 1 at hole f${p.col + 1}`;
+    if (THREE.includes(p.type)) return `Place the ${PART_NAMES[p.type]} with ${LEG_NAMES[p.type].join(', ')} in holes ${p.holes.join(', ')}`;
     const pol = { CE: ' (+ lead first)', D: ' (anode first)', LED: ' (anode, the long leg, first)', Z: ' (anode first, band to the cathode)' }[p.type] || '';
     return `Place ${partLabel(p)} ${PART_NAMES[p.type]} from ${p.holes[0]} to ${p.holes[1]}${pol}`;
   }
@@ -271,24 +287,80 @@ function renderInstruments(bench, host, controls, isRef) {
     el('input', { type: 'checkbox', checked: s[k], onchange: (ev) => { s[k] = ev.target.checked; set(); } }), `${k.toUpperCase()} closed`)))));
   if (controls && !isRef) items.push(el('p', { class: 'hint' }, 'Only the controls this experiment uses are shown.'));
   // observation table
-  if (exp?.record) {
-    const cols = exp.record;
+  {
+    const cols = exp?.record || ['var1', 'dmm', 'a1'];
     const table = el('table', { class: 'table obs' });
     const draw = () => table.replaceChildren(
       el('thead', {}, el('tr', {}, el('th', {}, '#'), ...cols.map(c => el('th', {}, RECORD[c].label)))),
       el('tbody', {}, ...(records.length ? records.map((r, i) => el('tr', {}, el('td', {}, String(i + 1)), ...cols.map(c => el('td', {}, RECORD[c].fmt(r[c])))))
         : [el('tr', {}, el('td', { colspan: cols.length + 1, class: 'hint' }, 'No readings yet. Change the source, then press Record.'))])));
+    const plot = plotPanel(cols, exp?.plot);
+    const drawAll = () => { draw(); plot.update(); };
     draw();
     items.push(el('div', { class: 'ins-sec' }, el('p', { class: 'panel-label' }, 'Observation table'),
       el('div', { class: 'obs-actions' },
-        el('button', { class: 'btn btn--sm btn--primary', onclick: () => { records.push(Object.fromEntries(cols.map(c => [c, RECORD[c].get(bench)]))); draw(); } }, 'Record reading'),
-        el('button', { class: 'btn btn--sm', onclick: () => { records = []; draw(); } }, 'Clear'),
-        el('button', { class: 'btn btn--sm', onclick: () => copyRecords(cols) }, 'Copy as CSV')),
-      el('div', { class: 'tt-wrap' }, table)));
+        el('button', { class: 'btn btn--sm btn--primary', onclick: () => { records.push(Object.fromEntries(cols.map(c => [c, RECORD[c].get(bench)]))); drawAll(); } }, 'Record reading'),
+        el('button', { class: 'btn btn--sm', onclick: () => { records = []; drawAll(); } }, 'Clear'),
+        el('button', { class: 'btn btn--sm', onclick: () => plot.toggle() }, 'Plot'),
+        el('button', { class: 'btn btn--sm', onclick: () => copyRecords(cols) }, 'Copy CSV')),
+      el('div', { class: 'tt-wrap' }, table), plot.el));
   }
   host.replaceChildren(...items);
   liveMeters(bench, host);
 }
+// ---- graph of the recorded readings
+const AXIS = {
+  var1: { label: 'VAR 1 (V)', k: 1 }, var2: { label: 'VAR 2 (V)', k: 1 }, dmm: { label: 'Multimeter (V)', k: 1 },
+  a1: { label: 'A1 (mA)', k: 1000 }, a2: { label: 'A2 (mA)', k: 1000 }, cc: { label: 'I source (mA)', k: 1000 },
+  pot: { label: 'Pot 1–W (kΩ)', k: 0.001 }, power: { label: 'Power (mW)', k: 1000 },
+};
+function niceTicks(lo, hi) {
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const span = hi - lo, step0 = span / 5, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 5, 10].map(m => m * mag).find(x => x >= step0);
+  const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+  const out = [];
+  for (let v = a; v <= b + step / 2; v += step) out.push(+v.toPrecision(6));
+  return out;
+}
+function plotPanel(cols, preferred) {
+  let open = false;
+  let xKey = preferred?.[0] || cols[0], yKey = preferred?.[1] || cols[cols.length - 1];
+  const sel = (val, on) => { const s = el('select', { class: 'input plot-sel' }, ...cols.map(c => el('option', { value: c, selected: c === val }, AXIS[c].label))); s.addEventListener('change', () => { on(s.value); update(); }); return s; };
+  const cv = el('canvas', { class: 'plot-cv', height: 220 });
+  const wrap = el('div', { class: 'plot', hidden: true },
+    el('div', { class: 'plot-axes' }, el('label', {}, 'X ', sel(xKey, v => { xKey = v; })), el('label', {}, 'Y ', sel(yKey, v => { yKey = v; }))), cv,
+    el('p', { class: 'hint plot-note' }));
+  function update() {
+    if (!open) return;
+    const pts = records.map(r => [r[xKey] * AXIS[xKey].k, r[yKey] * AXIS[yKey].k]).filter(p => p.every(Number.isFinite)).sort((a, b) => a[0] - b[0]);
+    const note = wrap.querySelector('.plot-note');
+    note.textContent = pts.length < 2 ? 'Record at least two readings to draw the graph.' : `${pts.length} points`;
+    const dpr = devicePixelRatio || 1, w = cv.clientWidth || 300, h = cv.clientHeight || 220;
+    cv.width = w * dpr; cv.height = h * dpr;
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const css = getComputedStyle(document.documentElement);
+    const ink = css.getPropertyValue('--ink-2').trim() || '#333', rule = css.getPropertyValue('--rule').trim() || '#ddd', brand = css.getPropertyValue('--brand-hi').trim() || '#127a5a';
+    g.clearRect(0, 0, w, h);
+    if (!pts.length) return;
+    const L = 46, R = 10, T = 10, B = 34;
+    const xt = niceTicks(Math.min(...pts.map(p => p[0])), Math.max(...pts.map(p => p[0])));
+    const yt = niceTicks(Math.min(0, ...pts.map(p => p[1])), Math.max(...pts.map(p => p[1])));
+    const X = (v) => L + (v - xt[0]) / (xt[xt.length - 1] - xt[0]) * (w - L - R);
+    const Y = (v) => h - B - (v - yt[0]) / (yt[yt.length - 1] - yt[0]) * (h - T - B);
+    g.font = '10px "Geist Mono", monospace'; g.fillStyle = ink; g.strokeStyle = rule; g.lineWidth = 1;
+    for (const v of xt) { g.beginPath(); g.moveTo(X(v), T); g.lineTo(X(v), h - B); g.stroke(); g.textAlign = 'center'; g.fillText(String(v), X(v), h - B + 13); }
+    for (const v of yt) { g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke(); g.textAlign = 'right'; g.fillText(String(v), L - 5, Y(v) + 3); }
+    g.textAlign = 'center'; g.fillText(AXIS[xKey].label, L + (w - L - R) / 2, h - 4);
+    g.save(); g.translate(11, T + (h - T - B) / 2); g.rotate(-Math.PI / 2); g.fillText(AXIS[yKey].label, 0, 0); g.restore();
+    g.strokeStyle = brand; g.fillStyle = brand; g.lineWidth = 2;
+    g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1])))); g.stroke();
+    for (const p of pts) { g.beginPath(); g.arc(X(p[0]), Y(p[1]), 3.5, 0, 7); g.fill(); }
+  }
+  return { el: wrap, update, toggle() { open = !open; wrap.hidden = !open; update(); } };
+}
+
 function copyRecords(cols) {
   const csv = [cols.map(c => RECORD[c].label).join(','), ...records.map(r => cols.map(c => RECORD[c].fmt(r[c]).replace(/[^\d.\-eE]/g, '')).join(','))].join('\n');
   navigator.clipboard?.writeText(csv).then(() => toast('Copied. Paste it into a spreadsheet to plot.', 'ok'), () => prompt('Copy:', csv));
@@ -362,6 +434,11 @@ const ICONS = {
   NPN: '<path d="M17 18v-6M24 18v-6M31 18v-6" stroke="#8a8a8a" stroke-width="2"/><path d="M15 13V8a9 7 0 0 1 18 0v5z" fill="#222"/>',
   PNP: '<path d="M17 18v-6M24 18v-6M31 18v-6" stroke="#8a8a8a" stroke-width="2"/><path d="M15 13V8a9 7 0 0 1 18 0v5z" fill="#333"/>',
   OA: '<rect x="12" y="5" width="24" height="12" rx="2" fill="#1d2124"/><path d="M15 3v2M21 3v2M27 3v2M33 3v2M15 17v2M21 17v2M27 17v2M33 17v2" stroke="#9aa" stroke-width="2"/>',
+  BD139: '<path d="M17 20v-6M24 20v-6M31 20v-6" stroke="#8a8a8a" stroke-width="2"/><rect x="14" y="5" width="20" height="10" rx="1.5" fill="#1d1f21"/><rect x="14" y="1" width="20" height="5" fill="#b9bec2"/>',
+  IRF540: '<path d="M17 20v-6M24 20v-6M31 20v-6" stroke="#8a8a8a" stroke-width="2"/><rect x="14" y="5" width="20" height="10" rx="1.5" fill="#1d1f21"/><rect x="14" y="1" width="20" height="5" fill="#b9bec2"/>',
+  LM7805: '<path d="M17 20v-6M24 20v-6M31 20v-6" stroke="#8a8a8a" stroke-width="2"/><rect x="14" y="5" width="20" height="10" rx="1.5" fill="#1d1f21"/><rect x="14" y="1" width="20" height="5" fill="#b9bec2"/>',
+  LM358: '<rect x="12" y="5" width="24" height="12" rx="2" fill="#1d2124"/><path d="M15 3v2M21 3v2M27 3v2M33 3v2M15 17v2M21 17v2M27 17v2M33 17v2" stroke="#9aa" stroke-width="2"/>',
+  NE555: '<rect x="12" y="5" width="24" height="12" rx="2" fill="#1d2124"/><path d="M15 3v2M21 3v2M27 3v2M33 3v2M15 17v2M21 17v2M27 17v2M33 17v2" stroke="#9aa" stroke-width="2"/>',
 };
 const picks = {};
 function renderParts() {
@@ -380,14 +457,27 @@ function renderParts() {
     }
     items.push(grid);
   }
-  items.push(el('p', { class: 'parts-group' }, 'Parts bin'));
-  const bin = el('div', { class: 'parts-grid' });
-  for (const type of Object.keys(PARTS)) {
-    const def = PARTS[type];
-    picks[type] ??= { value: def.def, color: 'red' };
-    const row = partButton(type, null, null, def.name, true);
-    bin.append(row);
+  const BIN = [['Passive', ['R', 'C', 'CE', 'L']], ['Diodes', ['D', 'LED', 'Z']], ['Transistors', ['NPN', 'PNP', 'BD139', 'IRF540']], ['ICs', ['OA', 'LM358', 'NE555', 'LM7805']]];
+  const bin = el('div');
+  BIN.forEach(([group, types], gi) => {
+    const d = el('details', { class: 'side-group', open: gi < 2 || !exp }, el('summary', {}, group, el('span', { class: 'count' }, String(types.length))));
+    const grid = el('div', { class: 'parts-grid', style: 'margin:4px 0 8px' });
+    for (const type of types) {
+      picks[type] ??= { value: PARTS[type].def, color: 'red' };
+      grid.append(partButton(type, null, null, PARTS[type].name, true));
+    }
+    d.append(grid);
+    bin.append(d);
+  });
+  if (WORKBENCH) {
+    for (const fam of FAMILIES) {
+      const chips = Object.values(CHIPS).filter(c => c.family === fam);
+      const d = el('details', { class: 'side-group' }, el('summary', {}, 'Logic: ' + fam.toLowerCase(), el('span', { class: 'count' }, String(chips.length))));
+      d.append(el('div', { class: 'parts-grid', style: 'margin:4px 0 8px' }, ...chips.map(c => partButton('IC', null, null, `${c.id}  ${c.name}`, false, c.id))));
+      bin.append(d);
+    }
   }
+  items.push(el('p', { class: 'parts-group' }, 'Parts bin'));
   items.push(bin);
   items.push(el('p', { class: 'parts-group' }, 'Wire colour'));
   const sw = el('div', { class: 'swatch-row' });
@@ -404,7 +494,7 @@ function renderParts() {
     el('dt', {}, 'Remove'), el('dd', {}, 'right-click, or select and press Del'))));
   host.replaceChildren(...items);
 }
-function partButton(type, value, color, label, withValue) {
+function partButton(type, value, color, label, withValue, chip) {
   const pk = picks[type] ??= { value: PARTS[type].def, color: 'red' };
   const row = el('div', { class: 'part-pick' });
   const btn = el('button', {
@@ -414,10 +504,10 @@ function partButton(type, value, color, label, withValue) {
       $$('.part-row').forEach(b => b.setAttribute('aria-pressed', 'false'));
       if (!on) { myBench.board.setPlace(null); return; }
       ev.currentTarget.setAttribute('aria-pressed', 'true');
-      myBench.board.setPlace({ type, value: value ?? pk.value, color: color ?? pk.color });
-      $('#myStatus').textContent = type === 'OA' ? 'Tap where the 741 should straddle the channel.' : type === 'NPN' || type === 'PNP' ? 'Tap the hole for the base (middle) leg.' : 'Tap a hole to drop it in, or drag from one hole to another. Esc stops placing.';
+      myBench.board.setPlace({ type, chip, value: value ?? pk.value, color: color ?? pk.color });
+      $('#myStatus').textContent = isDip(type) ? 'Tap where the chip should straddle the channel.' : THREE.includes(type) ? `Tap the hole for the middle leg (${LEG_NAMES[type][1]}).` : 'Tap a hole to drop it in, or drag from one hole to another. Esc stops placing.';
     },
-  }, el('span', { class: 'ico', html: `<svg viewBox="0 0 48 22">${ICONS[type]}</svg>` }), el('span', { class: 'nm' }, label));
+  }, el('span', { class: 'ico', html: `<svg viewBox="0 0 48 22">${ICONS[type] || ICONS.OA}</svg>` }), el('span', { class: 'nm' }, label));
   row.append(btn);
   if (withValue && (VALUE_PRESETS[type] || type === 'LED')) {
     const sel = type === 'LED'
@@ -444,12 +534,13 @@ function inspect(sel, bench, host) {
   const p = t.parts.find(x => x.id === sel.id);
   if (!p) return;
   const st = t.partState(p);
-  const kids = [el('h3', {}, `${p.ref} · ${partLabel(p)}`), el('p', { class: 'hint' }, PARTS[p.type].name)];
+  const kids = [el('h3', {}, `${p.ref} · ${partLabel(p)}`), el('p', { class: 'hint' }, p.type === 'IC' ? CHIPS[p.chip].name : PARTS[p.type].name)];
+  if (p.type === 'IC') kids.push(pinoutSVG(CHIPS[p.chip]), pinRoles(CHIPS[p.chip]));
   if (st) {
     const V = st.V, I = st.I;
     kids.push(el('div', { class: 'live-box' },
       V != null ? el('div', { class: 'meter' }, el('span', {}, 'Voltage across'), el('b', {}, fmtSI(V, 'V'))) : null,
-      el('div', { class: 'meter' }, el('span', {}, p.type === 'NPN' || p.type === 'PNP' ? 'Collector current' : 'Current'), el('b', {}, fmtSI(I, 'A'))),
+      el('div', { class: 'meter' }, el('span', {}, THREE.includes(p.type) && p.type !== 'LM7805' ? (p.type === 'IRF540' ? 'Drain current' : 'Collector current') : DIP8.includes(p.type) || p.type === 'LM7805' ? 'Output current' : 'Current'), el('b', {}, fmtSI(I, 'A'))),
       V != null && ['R', 'D', 'LED', 'Z'].includes(p.type) ? el('div', { class: 'meter' }, el('span', {}, 'Power'), el('b', {}, fmtSI(Math.abs(V * I), 'W'))) : null));
   }
   if (!bench.board.readonly) {
@@ -513,7 +604,9 @@ function copyReference() {
 }
 
 function renderIssues() {
-  const box = $('#issueBox');
+  for (const box of $$('#issueBox, #issueBoxF')) renderIssueBox(box);
+}
+function renderIssueBox(box) {
   const list = myBench.t.dirty ? [] : myBench.t.liveIssues();
   const serious = list.filter(i => i.level !== 'info').length;
   $('#issueBadge').hidden = !serious;
@@ -535,11 +628,10 @@ function renderCheckPanel() {
     el('div', { id: 'issueBox' }));
 }
 
-function runCheck() {
-  const e = exp;
+function compare(e, data) {
   const mk = (data) => { const t = new AnalogTrainer(); t.load(data); t.settings = { ...DEFAULT_SETTINGS(), ...structuredClone(e.settings) }; if (e.id === 'rc-charge') t.settings.s1 = true; t.window = e.window; return t; };
   const dur = e.window * (e.scope ? 1.5 : 0.2);
-  const A = fingerprint(mk(refData(e)), dur), B = fingerprint(mk(myBench.t.serialize()), dur);
+  const A = fingerprint(mk(refData(e)), dur), B = fingerprint(mk(data), dur);
   const rows = [];
   const keys = [...new Set([...A.parts, ...B.parts].map(p => p.key))];
   let pass = true;
@@ -557,7 +649,12 @@ function runCheck() {
       rows.push({ label: `${a.label} (${b.ref})`, want: a, got: b, ok });
     }
   }
-  if (pass) { markDone(e.id); drawSide(); }
+  return { pass, rows, A, B, close };
+}
+function runCheck(outEl = $('#checkOut'), { mark = true } = {}) {
+  const e = exp;
+  const { pass, rows, A, B, close } = compare(e, myBench.t.serialize());
+  if (pass && mark) { markDone(e.id); drawSide(); }
   const fmt = (p) => (p ? `${fmtSI(p.vmax, 'V')}, ${fmtSI(p.imax, 'A')}` : '—');
   const meterNotes = [];
   for (const k of ['dmm', 'a1', 'a2']) {
@@ -565,7 +662,7 @@ function runCheck() {
     if (a != null && (b == null || !close(a, b, k === 'dmm' ? 0.05 : 2e-5))) meterNotes.push(`${k === 'dmm' ? 'The multimeter' : k.toUpperCase()} should read about ${k === 'dmm' ? a.toFixed(2) + ' V' : (a * 1000).toFixed(2) + ' mA'}${b == null ? ', but it is not connected on your board' : `, yours reads ${k === 'dmm' ? b.toFixed(2) + ' V' : (b * 1000).toFixed(2) + ' mA'}`}.`);
   }
   const issue = myBench.t.liveIssues().find(i => i.level !== 'info');
-  $('#checkOut').replaceChildren(
+  outEl.replaceChildren(
     el('div', { class: 'verdict ' + (pass ? 'pass' : 'fail') },
       el('strong', {}, pass ? 'Your circuit works' : 'Not quite there yet'),
       el('span', {}, pass ? 'Every part sees the same voltage and current as in the reference. Marked as done.' : issue ? 'Start here: ' + issue.text : 'The rows in red differ from the reference. Check the connections around those parts.')),
@@ -574,23 +671,201 @@ function runCheck() {
       el('thead', {}, el('tr', {}, el('th', {}, 'Part'), el('th', {}, 'Expected peak V, I'), el('th', {}, 'Yours'))),
       el('tbody', {}, ...rows.map(r => el('tr', { class: r.ok ? '' : 'bad' }, el('td', { class: 'note-cell' }, r.label), el('td', {}, fmt(r.want)), el('td', { class: r.ok ? '' : 'miss' }, r.msg || fmt(r.got))))))),
   );
+  return pass;
 }
 
 // ------------------------------------------------------------------ keyboard
 document.addEventListener('keydown', (e) => {
-  if (e.target.matches('input, textarea, select') || view !== 'practice') return;
+  if (e.target.matches('input, textarea, select') || !['practice', 'fault'].includes(view)) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? myBench.doRedo() : myBench.doUndo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); myBench.doRedo(); return; }
   if (e.key === 'Escape') { if (myBench.board.cancel()) $$('.part-row').forEach(b => b.setAttribute('aria-pressed', 'false')); return; }
   if (e.key === 'Delete' || e.key === 'Backspace') { if (myBench.board.deleteSelected()) $('#myInspectBox')?.replaceChildren(); }
 });
 
+void parsePoint;
+
+
+// ------------------------------------------------------------------ practice board loading
+function loadPracticeBoard() {
+  myBench.storeKey = WORKBENCH ? 'bn-wb' : 'bn-al-' + (exp ? exp.id : 'free');
+  myBench.setWindow(exp ? exp.window : 0.01);
+  myBench.board.focusIds = new Set();
+  if (!myBench.restoreStored()) myBench.load({ parts: [], wires: [], settings: exp ? { ...DEFAULT_SETTINGS(), ...structuredClone(exp.settings) } : DEFAULT_SETTINGS() });
+  myBench.board.fit();
+}
+function leavePractice() {
+  mode = 'practice';
+  $('[data-mt="task"]').hidden = true;
+  $('[data-mt="steps"]').hidden = !exp;
+  $('[data-mt="check"]').hidden = false;
+  $('#split').classList.toggle('ref-hidden', !exp);
+  $('#showRef').hidden = true;
+  $('#hideRef').hidden = !exp;
+  loadPracticeBoard();
+  renderInstruments(myBench, $('#myMeters'), null, false);
+  renderPracticeSteps();
+  renderCheckPanel();
+  myTab(exp ? 'steps' : 'parts');
+}
+
+// ------------------------------------------------------------------ find the fault
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const POLAR = { D: 'diode', LED: 'LED', Z: 'Zener diode', CE: 'electrolytic capacitor' };
+function makeFault(e) {
+  const base = refData(e);
+  const kinds = [];
+  base.wires.forEach((w, i) => {
+    kinds.push(() => { const d = structuredClone(base); d.wires.splice(i, 1); return { data: d, text: `A wire is missing: ${describePoint(w.a)} to ${describePoint(w.b)}.` }; });
+    kinds.push(() => {
+      const d = structuredClone(base); const x = d.wires[i];
+      const end = parsePoint(x.b)?.kind === 'hole' ? 'b' : parsePoint(x.a)?.kind === 'hole' ? 'a' : null;
+      if (!end) return null;
+      const p = parsePoint(x[end]);
+      if (/^(tp|tn|bp|bn)$/.test(p.row)) return null;
+      const used = new Set([...d.wires.flatMap(y => [y.a, y.b]), ...d.parts.flatMap(q => q.holes || [])]);
+      for (const dc of shuffle([1, -1])) {
+        const h = p.row + (p.col + 1 + dc);
+        if (p.col + dc < 0 || p.col + dc > 59 || used.has(h)) continue;
+        const right = x[end];
+        x[end] = h;
+        return { data: d, wireIndex: i, text: `One end of the wire to ${describePoint(x[end === 'a' ? 'b' : 'a'])} is in hole ${h}, one column off. It belongs in the strip of ${right}.` };
+      }
+      return null;
+    });
+  });
+  base.parts.forEach((q, i) => {
+    if (q.type === 'R') kinds.push(() => { const d = structuredClone(base); const wrong = q.value >= 100000 ? q.value / 10 : q.value * 10; d.parts[i].value = wrong; return { data: d, partIndex: i, text: `A resistor has the wrong value: it is ${partLabel({ ...q, value: wrong })} but should be ${partLabel(q)}. Check the colour bands.` }; });
+    if (POLAR[q.type]) kinds.push(() => { const d = structuredClone(base); d.parts[i].holes = [...q.holes].reverse(); return { data: d, partIndex: i, text: `The ${POLAR[q.type]} is in backwards. Swap its two leads.` }; });
+  });
+  for (const k of shuffle(kinds)) {
+    const f = k();
+    if (f && !compare(e, f.data).pass) return f;
+  }
+  return null;
+}
+function enterFault() {
+  mode = 'fault';
+  myBench.storeKey = null;
+  $('#split').classList.add('ref-hidden');
+  $('#showRef').hidden = false;
+  $('[data-mt="steps"]').hidden = true;
+  $('[data-mt="check"]').hidden = true;
+  const tab = $('[data-mt="task"]');
+  tab.hidden = false;
+  tab.textContent = 'Fault';
+  newFault();
+  myTab('task');
+}
+function newFault() {
+  fault = makeFault(exp);
+  myBench.board.focusIds = new Set();
+  if (fault) { myBench.load(fault.data); colour(myBench); myBench.board.fit(); }
+  $('#saveState').textContent = '';
+  renderFaultPanel();
+}
+function renderFaultPanel() {
+  const host = $('#myTask');
+  if (!fault) { host.replaceChildren(el('p', { class: 'hint' }, 'This circuit is too small to hide a fault in. Try another example.')); return; }
+  const out = el('div'), reveal = el('div');
+  host.replaceChildren(
+    el('h3', {}, 'Something on this board is wrong'),
+    el('p', { class: 'hint' }, 'The circuit was built correctly and then one thing was broken: a missing wire, a wire one hole off, a wrong resistor or a part in backwards. Use the meters and scope to find it, fix it, then press Check.'),
+    el('div', { class: 'mode-actions' },
+      el('button', { class: 'btn btn--primary', onclick: () => { if (runCheck(out, { mark: false })) out.prepend(el('p', { class: 'mode-win' }, 'Fault found and fixed.')); } }, 'Check'),
+      el('button', { class: 'btn', onclick: () => {
+        reveal.replaceChildren(el('div', { class: 'note' }, el('strong', {}, 'The fault: '), fault.text));
+        const t = myBench.t, ids = new Set();
+        if (fault.wireIndex != null && t.wires[fault.wireIndex]) ids.add(t.wires[fault.wireIndex].id);
+        if (fault.partIndex != null && t.parts[fault.partIndex]) ids.add(t.parts[fault.partIndex].id);
+        myBench.board.focusIds = ids; myBench.board.render();
+      } }, 'Show me'),
+      el('button', { class: 'btn btn--ghost', onclick: newFault }, 'New fault')),
+    reveal, out,
+    el('details', { class: 'hint-box' }, el('summary', {}, 'Hint: what the trainer noticed'), el('div', { id: 'issueBoxF' })),
+  );
+  renderIssues();
+}
+
+// ------------------------------------------------------------------ lab exam practice
+function stopExamTimer() { if (examTimer) { clearInterval(examTimer); examTimer = null; } }
+function openExam() {
+  const e = AEXPERIMENTS[Math.floor(Math.random() * AEXPERIMENTS.length)];
+  open(e, 'practice');
+  mode = 'exam';
+  $('#tabs').hidden = true;
+  $('#crumbGroup').textContent = 'Lab exam practice';
+  $('#title').textContent = 'Lab exam practice';
+  $('#aim').textContent = 'A random experiment, an empty board and a clock. Build it from the circuit diagram, then submit.';
+  $('#split').classList.add('ref-hidden');
+  $('#showRef').hidden = true; $('#hideRef').hidden = true;
+  myBench.storeKey = null;
+  myBench.load({ parts: [], wires: [], settings: { ...DEFAULT_SETTINGS(), ...structuredClone(e.settings) } });
+  myBench.board.fit();
+  renderInstruments(myBench, $('#myMeters'), null, false);
+  $('[data-mt="steps"]').hidden = true;
+  $('[data-mt="check"]').hidden = true;
+  const tab = $('[data-mt="task"]');
+  tab.hidden = false;
+  tab.textContent = 'Task';
+  renderExamPanel(e);
+  myTab('task');
+  drawSide();
+  $('#freeBtn').classList.remove('is-active');
+  $('#saveState').textContent = '';
+  history.replaceState(null, '', '?exam=1');
+}
+function renderExamPanel(e) {
+  const host = $('#myTask');
+  const clock = el('div', { class: 'exam-clock' }, '20:00');
+  const minutes = el('select', { class: 'input exam-min', 'aria-label': 'Time limit' }, ...[10, 15, 20, 30, 45].map(m => el('option', { value: m, selected: m === 20 }, `${m} min`)));
+  const result = el('div');
+  const startBtn = el('button', { class: 'btn btn--primary', onclick: () => {
+    stopExamTimer();
+    examLimit = +minutes.value * 60; examStart = Date.now();
+    startBtn.textContent = 'Restart timer';
+    examTimer = setInterval(() => {
+      const left = Math.max(0, examLimit - (Date.now() - examStart) / 1000);
+      clock.textContent = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+      clock.classList.toggle('low', left < 60);
+      if (!left) { stopExamTimer(); submit(true); }
+    }, 250);
+  } }, 'Start timer');
+  function submit(timeUp) {
+    stopExamTimer();
+    const used = examStart ? Math.round((Date.now() - examStart) / 1000) : null;
+    const pass = runCheck(result, { mark: false });
+    result.prepend(el('div', { class: 'exam-score ' + (pass ? 'pass' : 'fail') },
+      el('strong', {}, timeUp ? (pass ? 'Time up, but it works' : 'Time is up') : pass ? 'Pass' : 'Not working yet'),
+      el('span', {}, used != null ? `Time used: ${Math.floor(used / 60)} min ${used % 60} s.` : 'The timer was not running.'),
+      el('button', { class: 'btn btn--sm', onclick: () => open(e, 'reference') }, 'See the reference build')));
+  }
+  host.replaceChildren(
+    el('div', { class: 'exam-head' }, clock, minutes, startBtn),
+    el('div', { class: 'task-card' },
+      el('p', { class: 'panel-label', style: 'margin-top:0' }, 'Your task'),
+      el('h3', {}, e.title),
+      el('p', {}, e.aim),
+      renderSchematic(e.schematic),
+      el('p', { class: 'panel-label' }, 'Components'),
+      el('ul', { class: 'task-list' }, ...bom(e).map(t => el('li', {}, t))),
+      el('p', { class: 'hint' }, `The instruments are already set: ${settingText(e).join('; ') || 'defaults'}. Wire them to the circuit yourself.`)),
+    el('div', { class: 'mode-actions' },
+      el('button', { class: 'btn btn--primary', onclick: () => submit(false) }, 'Submit'),
+      el('button', { class: 'btn btn--ghost', onclick: openExam }, 'New task'),
+      el('button', { class: 'btn btn--ghost', onclick: () => open(null, 'practice') }, 'Leave exam')),
+    result,
+  );
+}
+$('#examBtn').addEventListener('click', openExam);
+
 // ------------------------------------------------------------------ boot
 (function boot() {
   const q = new URLSearchParams(location.search);
+  if (WORKBENCH) { open(null, 'practice'); history.replaceState(null, '', location.pathname); return; }
   const e = AEXPERIMENTS.find(x => x.id === q.get('exp'));
   const v = q.get('view');
-  if (e) open(e, ['overview', 'reference', 'practice'].includes(v) ? v : 'overview');
+  if (q.get('exam')) openExam();
+  else if (e) open(e, ['overview', 'reference', 'practice', 'fault'].includes(v) ? v : 'overview');
   else open(null, 'practice'); // the free breadboard is the front door
 })();
-void parsePoint;

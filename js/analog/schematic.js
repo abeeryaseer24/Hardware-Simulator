@@ -3,7 +3,7 @@ import { svg, fmtSI } from '../shared/site.js';
 import { terminals, G } from './engine.js';
 
 function valueLabel(e) {
-  if (e.label && !['R', 'C', 'L'].includes(e.type)) return e.label;
+  if (e.label && (!['R', 'C', 'L'].includes(e.type) || !e.value)) return e.label;
   const v = e.value;
   const base = {
     R: () => fmtSI(v, 'Ω'), C: () => fmtSI(v, 'F'), L: () => fmtSI(v, 'H'), V: () => fmtSI(v, 'V'), I: () => fmtSI(v, 'A'),

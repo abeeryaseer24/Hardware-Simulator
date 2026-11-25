@@ -36,7 +36,7 @@ export function terminals(e) {
   if (e.terms) return e.terms;
   const [x, y] = e.p[0];
   switch (e.type) {
-    case 'GND': return [[x, y]];
+    case 'GND': case 'DRV': return [[x, y]];
     case 'OA': {
       const f = e.flip ? -1 : 1;
       return [[x, y - G * f], [x, y + G * f], [x + 4 * G, y]]; // in-, in+, out
@@ -216,6 +216,7 @@ export class Circuit {
   // ---------------------------------------------------------------- one time step
   step() {
     if (this.dirty) this.compile();
+    if (this.beforeStep) this.beforeStep(this);
     const N = this.size, nn = this.nNodes, dt = this.dt, t = this.t + dt;
     const x = this.x;
     const v = (i) => (i < 0 ? 0 : x[i]);
@@ -237,6 +238,7 @@ export class Circuit {
         const s = e._st;
         switch (e.type) {
           case 'R': cond(a, c, 1 / Math.max(e.value, 1e-6)); break;
+          case 'DRV': { const g = 1 / e.r; addG(a, a, g); inj(a, g * e.value); break; }
           case 'VM': cond(a, c, 1e-9); break;
           case 'SW': if (!e.closed) cond(a, c, 1e-12); break;
           case 'I': inj(a, -e.value); inj(c, e.value); break;
@@ -304,12 +306,22 @@ export class Circuit {
             }
             break;
           }
+          case 'NMOS': {
+            const vgs = s.vgs ?? 0, vds = s.vds ?? 0;
+            const m = nmos(vgs, vds, e);
+            const k0 = m.id - m.gm * vgs - m.gds * vds;
+            cond(c, d, 1e-9);
+            if (c >= 0) { addG(c, a, m.gm); addG(c, c, m.gds); addG(c, d, -(m.gm + m.gds)); b[c] -= k0; }
+            if (d >= 0) { addG(d, a, -m.gm); addG(d, c, -m.gds); addG(d, d, m.gm + m.gds); b[d] += k0; }
+            break;
+          }
           case 'OA': {
             // in- a, in+ c, out d ; out = vsat * tanh(A vd / vsat)
-            const k = e._k, Aol = 1e5, vs = e.vsat;
+            const k = e._k, Aol = 1e5;
+            const vs = e.vhi != null ? (e.vhi - e.vlo) / 2 : e.vsat, vm = e.vhi != null ? (e.vhi + e.vlo) / 2 : 0;
             const vd = s.vd ?? 0;
-            const th = Math.tanh((Aol * vd) / vs);
-            const f = vs * th, fp = Aol * (1 - th * th);
+            const th = Math.tanh((Aol * (vd - vm / Aol)) / vs);
+            const f = vm + vs * th, fp = Aol * (1 - th * th);
             if (d >= 0) { A[d][k] += 1; A[k][d] += 1; }
             if (c >= 0) A[k][c] -= fp;
             if (a >= 0) A[k][a] += fp;
@@ -345,11 +357,17 @@ export class Circuit {
           const nbc = pnjlim(pol * (v(a) - v(c)), s.vbc ?? 0, VT, vcrit);
           if (Math.abs(nbe - (s.vbe ?? 0)) > 1e-6 || Math.abs(nbc - (s.vbc ?? 0)) > 1e-6) nonlinearMoved = true;
           s.vbe = nbe; s.vbc = nbc;
+        } else if (e.type === 'NMOS') {
+          const ngs = v(a) - v(d), nds = v(c) - v(d);
+          const og = s.vgs ?? 0, od = s.vds ?? 0;
+          const lg = og + Math.max(-1, Math.min(1, ngs - og)), ld = od + Math.max(-3, Math.min(3, nds - od));
+          if (Math.abs(lg - og) > 1e-6 || Math.abs(ld - od) > 1e-6) nonlinearMoved = true;
+          s.vgs = lg; s.vds = ld;
         } else if (e.type === 'OA') {
           let vd = v(c) - v(a);
           const old = s.vd ?? 0;
           // limit the step in tanh's argument unless both ends sit deep in the same rail
-          const k = 1e5 / e.vsat;
+          const k = 1e5 / (e.vhi != null ? (e.vhi - e.vlo) / 2 : e.vsat);
           const uo = old * k, un = vd * k;
           const deep = Math.abs(uo) > 4 && Math.abs(un) > 4 && Math.sign(uo) === Math.sign(un);
           if (!deep && Math.abs(un - uo) > 4) vd = (uo + Math.sign(un - uo) * 4) / k;
@@ -358,7 +376,7 @@ export class Circuit {
         }
       }
       if (!nonlinearMoved && maxDelta < 1e-6) { converged = true; break; }
-      if (!this.els.some(e => /^(D|LED|Z|NPN|PNP|OA)$/.test(e.type))) { converged = true; break; }
+      if (!this.els.some(e => /^(D|LED|Z|NPN|PNP|OA|NMOS)$/.test(e.type))) { converged = true; break; }
     }
 
     // commit reactive state and compute branch currents
@@ -367,6 +385,7 @@ export class Circuit {
       const vab = v(a) - v(c);
       switch (e.type) {
         case 'R': e.cur = vab / e.value; break;
+        case 'DRV': e.cur = (e.value - v(a)) / e.r; break;
         case 'C': { const vp = s.v ?? 0; e.cur = (e.value / dt) * (vab - vp); s.v = vab; break; }
         case 'L': { const ip = s.i ?? 0; e.cur = ip + (dt / e.value) * vab; s.i = e.cur; break; }
         case 'V': case 'AC': case 'AM': e.cur = -x[e._k]; break;
@@ -381,6 +400,7 @@ export class Circuit {
         case 'SW': e.cur = e.closed ? null : 0; break;
         case 'VM': e.cur = 0; break;
         case 'OA': e.cur = -x[e._k]; break;
+        case 'NMOS': e.cur = nmos(s.vgs ?? 0, s.vds ?? 0, e).id; e.ic = e.cur; break;
         case 'NPN': case 'PNP': {
           const pol = e.type === 'NPN' ? 1 : -1;
           const is = 1e-14, ef = Math.exp((s.vbe ?? 0) / VT), er = Math.exp((s.vbc ?? 0) / VT);
@@ -417,4 +437,20 @@ function diodeParams(e) {
   }
   const is = 1e-14, nvt = VT;
   return { is, nvt, vcrit: nvt * Math.log(nvt / (Math.SQRT2 * is)) };
+}
+
+// Square-law n-channel MOSFET. Returns drain current and its derivatives.
+function nmos(vgs, vds, e) {
+  const K = e.k ?? 2, Vt = e.vt ?? 3, lam = 0.01;
+  let g = vgs, ds = vds, flip = false;
+  if (vds < 0) { flip = true; g = vgs - vds; ds = -vds; }
+  const vov = g - Vt;
+  let id = 0, gm = 0, gds = 0;
+  if (vov > 0) {
+    const cl = 1 + lam * ds;
+    if (ds < vov) { id = K * (2 * vov * ds - ds * ds) * cl; gm = 2 * K * ds * cl; gds = K * (2 * vov - 2 * ds) * cl + K * (2 * vov * ds - ds * ds) * lam; }
+    else { id = K * vov * vov * cl; gm = 2 * K * vov * cl; gds = K * vov * vov * lam; }
+  }
+  if (flip) return { id: -id, gm: -gm, gds: gm + gds };
+  return { id, gm, gds };
 }

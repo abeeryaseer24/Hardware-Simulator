@@ -8,6 +8,7 @@ A free virtual breadboard for electrical and electronic engineering students. Bu
 
 | Section | What it does |
 |---|---|
+| **Practice** | The main tool: one breadboard with every part, digital chips (simulated as real driven pins) and analog parts together, plus all the bench instruments. |
 | **Digital Lab** | A free digital breadboard: 30 real 74xx chips, switches, LEDs, 7-segment display, clock, pulsers and logic probe. 29 common experiments included as ready-made examples. Also holds the **K-Map solver** (K-map, truth table, Boolean expression, minterm and maxterm input). |
 | **Analog Lab** | A free analog breadboard with a DC supply (±12 V, two variable outputs), function generator, multimeter, two ammeters, two-channel oscilloscope, switches, constant-current source and potentiometer. 25 common experiments included as ready-made examples. |
 | **Tools** | Resistor and capacitor codes, LED resistor, Ohm's law and dividers, RC/RLC, op-amp gain, 555 timer, number bases and codes. |
@@ -24,6 +25,12 @@ The free breadboard is the main tool. On top of it, common lab experiments come 
    - analog circuits are compared with the reference part by part (voltage across and current through each component).
 
 Progress is saved in the browser, and finished experiments are ticked in the list.
+
+Every example also has **Find the fault** (one hidden mistake to track down and fix), and both labs offer **Lab exam practice** (a random task with a timer, graded on submit). Analog experiments that vary a source have an observation table with a built-in graph.
+
+### Parts
+
+Resistors, capacitors (ceramic and electrolytic), inductors, 1N4007, LEDs, Zeners, BC547/BC557, BD139, IRF540, µA741, LM358, NE555, LM7805, and 31 logic chips from the 7400 series plus the CD4017.
 
 ### Analog experiments
 

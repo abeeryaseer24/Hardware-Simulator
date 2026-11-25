@@ -121,3 +121,10 @@
 .credit p { margin: 0 0 4px; }
 .credit strong { color: var(--ink); }
 .credit__small { font-size: .86rem; color: var(--muted); }
+
+.entry__card--main { grid-column: 1 / -1; padding: 24px 26px; border-color: color-mix(in srgb, var(--brand) 45%, var(--rule)); background: linear-gradient(135deg, var(--brand-tint), var(--surface) 70%); grid-template-columns: 52px 1fr auto; align-items: center; }
+.entry__card--main .entry__icon { width: 52px; height: 52px; background: var(--brand); color: #fff; }
+.entry__card--main .entry__title { font-size: 1.25rem; }
+.entry__card--main .entry__text { font-size: .95rem; max-width: 70ch; }
+.entry__go { grid-row: span 2; align-self: center; padding: 10px 16px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 600; font-size: .92rem; white-space: nowrap; }
+@media (max-width: 860px) { .entry__card--main { grid-template-columns: 52px 1fr; } .entry__go { grid-column: 1 / -1; grid-row: auto; justify-self: start; margin-top: 12px; } }

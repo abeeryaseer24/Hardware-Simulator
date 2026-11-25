@@ -13,7 +13,7 @@
 .t-tiny.left { text-anchor: start; }
 
 .led { fill: #4a1d1d; stroke: #1a0b0b; stroke-width: 1.5; transition: fill .08s; }
-.led.on { fill: url(#ledOn); }
+.led.on { fill: #ff2d2d; }
 .led-glow { opacity: 0; transition: opacity .08s; pointer-events: none; }
 .led-glow.on { opacity: 1; }
 .led-shine { fill: rgba(255, 255, 255, .28); pointer-events: none; }
@@ -81,7 +81,7 @@
 
 /* chips */
 .chip { cursor: grab; }
-.chip-body { fill: url(#chipBody); stroke: #050607; }
+.chip-body { fill: #1f2326; stroke: #050607; filter: drop-shadow(0 1.5px 1.2px rgba(0,0,0,.45)); }
 .chip-notch { fill: #3a3f42; stroke: #050607; }
 .chip-dot { fill: #555b60; }
 .chip-label { fill: #dfe5e8; font: 600 8.5px var(--f-mono); text-anchor: middle; pointer-events: none; }
@@ -143,3 +143,5 @@
 .po-lv { fill: var(--muted); font: 600 11px var(--f-mono); text-anchor: middle; }
 .po-lv.hi { fill: var(--high); }
 .po-lv.lo { fill: var(--low); }
+.led-glow { filter: blur(7px); }
+.a-to92, .a-to220 { filter: drop-shadow(0 1.5px 1.2px rgba(0,0,0,.45)); }

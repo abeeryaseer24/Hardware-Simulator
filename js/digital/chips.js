@@ -310,6 +310,19 @@ export const CHIPS = {
       return { 12: s.a, 9: s.b & 1, 8: s.b >> 1 & 1, 11: s.b >> 2 & 1 };
     },
   },
+  '4017': {
+    name: 'CMOS decade counter / divider, 10 decoded outputs', family: 'Counters & registers', pins: 16, seq: true,
+    names: ['Q5', 'Q1', 'Q0', 'Q2', 'Q6', 'Q7', 'Q3', 'VSS', 'Q8', 'Q4', 'Q9', 'CO', 'INH', 'CLK', 'RST', 'VDD'],
+    out: [3, 2, 4, 7, 10, 1, 5, 6, 9, 11, 12],
+    eval: (v, s) => {
+      const e = edge(v, s, 14, false);
+      s.n ??= 0;
+      if (v(15)) s.n = 0;
+      else if (e && !v(13)) s.n = (s.n + 1) % 10;
+      const Q = [3, 2, 4, 7, 10, 1, 5, 6, 9, 11];
+      return { ...Object.fromEntries(Q.map((p, i) => [p, +(i === s.n)])), 12: +(s.n < 5) };
+    },
+  },
   '74161': {
     name: 'Synchronous 4-bit counter (async clear)', family: 'Counters & registers', pins: 16, seq: true,
     names: ['/CLR', 'CLK', 'A', 'B', 'C', 'D', 'ENP', 'GND', '/LOAD', 'ENT', 'QD', 'QC', 'QB', 'QA', 'RCO', 'VCC'],

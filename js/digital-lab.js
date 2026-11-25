@@ -1,7 +1,7 @@
 import { mountChrome, toast, $, $$, el } from './shared/site.js';
 import { renderSide, bindSideToggle, markDone, DIGITAL_TOOLS } from './shared/lab-side.js';
 import { CHIPS, FAMILIES } from './digital/chips.js';
-import { describePoint, parsePoint, pinHole, PADS } from './digital/model.js';
+import { describePoint, parsePoint, pinHole, PADS, Trainer, holeId, baseNode } from './digital/model.js';
 import { WIRE_COLORS } from './digital/board.js';
 import { DigitalBench, benchToolbar } from './digital/bench.js';
 import { EXPERIMENTS } from './digital/experiments.js';
@@ -16,6 +16,9 @@ let refSteps = [];
 let stepIndex = 0;
 let ghostOn = false;
 let stepTimer = null;
+let mode = 'practice';   // practice | fault | exam
+let fault = null;
+let examTimer = null, examStart = 0, examLimit = 0;
 
 // ------------------------------------------------------------------ benches
 const notify = (m, k) => toast(m, k);
@@ -40,12 +43,13 @@ function afterMyChange() {
   if (exp) renderPracticeSteps();
   const u = myBench._undoBtns;
   if (u) { u.undo.disabled = !myBench.undo.length; u.redo.disabled = !myBench.redo.length; }
-  $('#saveState').textContent = 'saved on this device';
+  $('#saveState').textContent = myBench.storeKey ? 'saved on this device' : '';
 }
 
 // ------------------------------------------------------------------ sidebar
 const sideItems = EXPERIMENTS.map(e => ({ id: e.id, title: e.title, group: e.group, sub: [...new Set(e.build().chips.map(c => c.type))].join(' + ') }));
 function drawSide() {
+  $('#examBtn')?.classList.toggle('is-active', mode === 'exam');
   renderSide({ host: $('#expList'), items: sideItems, activeId: exp?.id, filter: $('#search').value, onPick: (i) => open(EXPERIMENTS.find(e => e.id === i.id)), extra: [DIGITAL_TOOLS] });
   $('#freeBtn').classList.toggle('is-active', !exp);
 }
@@ -58,7 +62,10 @@ function setView(v) {
   if (!exp && v !== 'practice') v = 'practice';
   view = v;
   $$('#tabs [data-view]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.view === v)));
-  $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== v; });
+  const pane = v === 'fault' ? 'practice' : v;
+  $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
+  if (v === 'fault' && mode !== 'fault') enterFault();
+  else if (v !== 'fault' && mode === 'fault') leavePractice();
   if (v !== 'reference') stopStepPlay();
   syncUrl();
 }
@@ -93,6 +100,11 @@ function colourWires(bench) {
 
 function open(e, wantView) {
   exp = e;
+  mode = 'practice';
+  stopExamTimer();
+  $('#tabs').hidden = false;
+  $('[data-mt="task"]').hidden = true;
+  $('[data-mt="check"]').hidden = false;
   stopStepPlay();
   drawSide();
   $('#side').classList.remove('is-open');
@@ -124,13 +136,8 @@ function open(e, wantView) {
     colourWires(miniBench);
     miniBench.board.fit();
   }
-  // practice bench
-  myBench.storeKey = 'bn-dl-' + (e ? e.id : 'free');
-  myBench.stopClock();
-  if (!myBench.restoreStored()) myBench.load({ chips: [], wires: [], segMode: e?.segMode || 'cc' });
-  myBench.board.guide = null;
-  ghostOn = false;
-  myBench.board.fit();
+  $('#tabs [data-view="fault"]').hidden = !e;
+  loadPracticeBoard();
   renderParts();
   renderPracticeSteps();
   renderCheckPanel();
@@ -401,9 +408,7 @@ function renderIssues() {
   const serious = list.filter(i => i.level !== 'info').length;
   $('#issueBadge').hidden = !serious;
   $('#issueBadge').textContent = serious;
-  const box = $('#issueBox');
-  if (!box) return;
-  box.replaceChildren(list.length
+  for (const box of $$('#issueBox, #issueBoxF')) box.replaceChildren(list.length
     ? el('ul', { class: 'issue-list' }, ...list.map(i => el('li', { class: 'lvl-' + i.level }, i.text)))
     : el('p', { class: 'hint' }, myBench.trainer.chips.length ? 'No wiring problems spotted.' : 'Your board is empty.'));
 }
@@ -423,9 +428,7 @@ function renderCheckPanel() {
 }
 
 function readPad(t, pad) { const v = t.result.read(pad); return v === null ? 'Z' : v; }
-function runCheck() {
-  const e = exp, t = myBench.trainer;
-  myBench.stopClock();
+function evaluate(e, t) {
   const saved = { sw: t.switches.slice(), p: t.pulsers.slice(), c: t.clock, pw: t.power };
   t.power = true; t.clock = 0; t.pulsers = [0, 0];
   if (e.segMode) t.segMode = e.segMode;
@@ -457,8 +460,14 @@ function runCheck() {
     }
   }
   t.switches = saved.sw; t.pulsers = saved.p; t.clock = saved.c; t.power = saved.pw;
+  return { pass, rows };
+}
+function runCheck(outEl = $('#checkOut'), { mark = true } = {}) {
+  const e = exp, t = myBench.trainer;
+  myBench.stopClock();
+  const { pass, rows } = evaluate(e, t);
   myBench.refresh();
-  if (pass) { markDone(e.id); drawSide(); }
+  if (pass && mark) { markDone(e.id); drawSide(); }
   const bad = rows.filter(r => !r.ok).length;
   const first = t.result.issues.find(i => i.level !== 'info');
   const head = e.fn
@@ -470,12 +479,13 @@ function runCheck() {
       const ok = r.got[o.name] === r.want[o.name];
       return el('td', { class: 'out' + (ok ? '' : ' miss') }, String(r.got[o.name]), ok ? '' : el('small', {}, ' want ' + r.want[o.name]));
     })));
-  $('#checkOut').replaceChildren(
+  outEl.replaceChildren(
     el('div', { class: 'verdict ' + (pass ? 'pass' : 'fail') },
       el('strong', {}, pass ? 'Your circuit works' : `${bad} of ${rows.length} ${e.fn ? 'rows' : 'steps'} are wrong`),
       el('span', {}, pass ? 'Marked as done in the experiment list.' : first ? 'Start here: ' + first.text : 'Red cells show what your board did versus what it should do. Z means nothing drives that output.')),
     el('div', { class: 'tt-wrap' }, el('table', { class: 'table tt' }, el('thead', {}, head), el('tbody', {}, ...body))),
   );
+  return pass;
 }
 
 // ------------------------------------------------------------------ inspector + status
@@ -527,7 +537,7 @@ function hoverStatus({ point, chip }, bench, line) {
 // ------------------------------------------------------------------ keyboard
 document.addEventListener('keydown', (e) => {
   if (e.target.matches('input, textarea, select')) return;
-  const bench = view === 'reference' ? refBench : view === 'practice' ? myBench : null;
+  const bench = view === 'reference' ? refBench : view === 'practice' || view === 'fault' ? myBench : null;
   if (!bench) return;
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && bench === myBench) { e.preventDefault(); e.shiftKey ? myBench.doRedo() : myBench.doUndo(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y' && bench === myBench) { e.preventDefault(); myBench.doRedo(); return; }
@@ -542,11 +552,206 @@ document.addEventListener('keyup', (e) => {
   for (const b of [refBench, myBench]) if (b.trainer.pulsers[0]) { b.trainer.pulsers[0] = 0; b.refresh(); }
 });
 
+
+
+// ------------------------------------------------------------------ practice board loading
+function loadPracticeBoard() {
+  myBench.storeKey = 'bn-dl-' + (exp ? exp.id : 'free');
+  myBench.stopClock();
+  if (!myBench.restoreStored()) myBench.load({ chips: [], wires: [], segMode: exp?.segMode || 'cc' });
+  myBench.board.guide = null;
+  myBench.board.focusWire = null;
+  ghostOn = false;
+  myBench.board.fit();
+}
+function leavePractice() {
+  mode = 'practice';
+  $('[data-mt="task"]').hidden = true;
+  $('[data-mt="steps"]').hidden = !exp;
+  $('[data-mt="check"]').hidden = false;
+  $('#split').classList.toggle('ref-hidden', !exp);
+  $('#showRef').hidden = true;
+  $('#hideRef').hidden = !exp;
+  loadPracticeBoard();
+  renderPracticeSteps();
+  renderCheckPanel();
+  myTab(exp ? 'steps' : 'parts');
+}
+
+// ------------------------------------------------------------------ find the fault
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const GATE_SWAP = ['7400', '7408', '7432', '7486'];
+function makeFault(e) {
+  const base = refData(e);
+  const isPower = (w) => /supply|VCC|GND/.test(w.note || '');
+  const signal = base.wires.map((w, i) => i).filter(i => !isPower(base.wires[i]));
+  const kinds = [];
+  for (const i of signal) {
+    kinds.push(() => {
+      const d = structuredClone(base); const w = d.wires.splice(i, 1)[0];
+      return { data: d, ghost: w, text: `A wire is missing: ${w.note ? w.note + ', ' : ''}${describePoint(w.a)} to ${describePoint(w.b)}.` };
+    });
+    kinds.push(() => {
+      const d = structuredClone(base); const w = d.wires[i];
+      const end = parsePoint(w.b).kind === 'hole' ? 'b' : parsePoint(w.a).kind === 'hole' ? 'a' : null;
+      if (!end) return null;
+      const p = parsePoint(w[end]);
+      if (/^(tp|tn|bp|bn)$/.test(p.row)) return null;
+      const used = new Set(d.wires.flatMap(x => [x.a, x.b]));
+      for (const dc of shuffle([1, -1])) {
+        const h = holeId(p.row, p.col + dc);
+        if (p.col + dc < 0 || used.has(h) || baseNode(h) === baseNode(w[end])) continue;
+        const right = w[end];
+        w[end] = h;
+        return { data: d, wireIndex: i, text: `${w.note ? w.note + ': ' : 'A wire '}one end is in hole ${h}, one column off. It belongs in the strip of ${right}.` };
+      }
+      return null;
+    });
+  }
+  base.wires.forEach((w, i) => {
+    if (!/VCC|GND/.test(w.note || '')) return;
+    kinds.push(() => { const d = structuredClone(base); d.wires.splice(i, 1); return { data: d, ghost: w, text: `${w.note.replace(' VCC', ' has no VCC').replace(' GND', ' has no ground')}: the wire ${describePoint(w.a)} to ${describePoint(w.b)} is missing.` }; });
+  });
+  base.chips.forEach((c, i) => {
+    if (!GATE_SWAP.includes(c.type)) return;
+    kinds.push(() => {
+      const d = structuredClone(base); const wrong = shuffle(GATE_SWAP.filter(x => x !== c.type))[0];
+      d.chips[i].type = wrong;
+      return { data: d, text: `${c.ref || 'U' + (i + 1)} is a ${wrong}, but this circuit needs a ${c.type}. Same pinout, wrong gate.` };
+    });
+  });
+  for (const k of shuffle(kinds)) {
+    const f = k();
+    if (!f) continue;
+    const t = new Trainer();
+    t.load(f.data);
+    t.power = true;
+    if (!evaluate(e, t).pass) return f;
+  }
+  return null;
+}
+function enterFault() {
+  mode = 'fault';
+  myBench.storeKey = null;
+  $('#split').classList.add('ref-hidden');
+  $('#showRef').hidden = false;
+  $('[data-mt="steps"]').hidden = true;
+  $('[data-mt="check"]').hidden = true;
+  const tab = $('[data-mt="task"]');
+  tab.hidden = false;
+  tab.textContent = 'Fault';
+  newFault();
+  myTab('task');
+}
+function newFault() {
+  fault = makeFault(exp);
+  myBench.board.guide = null;
+  myBench.board.focusWire = null;
+  if (fault) { myBench.load(fault.data); colourWires(myBench); myBench.board.fit(); }
+  renderFaultPanel();
+}
+function renderFaultPanel() {
+  const host = $('#myTask');
+  if (!fault) { host.replaceChildren(el('p', { class: 'hint' }, 'This circuit is too small to hide a fault in. Try another example.')); return; }
+  const out = el('div');
+  const reveal = el('div');
+  host.replaceChildren(
+    el('h3', {}, 'Something on this board is wrong'),
+    el('p', { class: 'hint' }, 'The circuit was wired correctly and then one thing was broken: a missing wire, a wire one hole off, a chip without power or the wrong chip. Test it with the switches and the logic probe, find the fault, fix it, then press Check.'),
+    el('div', { class: 'mode-actions' },
+      el('button', { class: 'btn btn--primary', onclick: () => { if (runCheck(out, { mark: false })) out.prepend(el('p', { class: 'mode-win' }, 'Fault found and fixed.')); } }, 'Check'),
+      el('button', { class: 'btn', onclick: () => {
+        reveal.replaceChildren(el('div', { class: 'note' }, el('strong', {}, 'The fault: '), fault.text));
+        if (fault.ghost) { myBench.board.guide = { chips: [], wires: [fault.ghost], step: 0 }; myBench.board.renderGuide(); }
+        if (fault.wireIndex != null) { myBench.board.focusWire = myBench.trainer.wires[fault.wireIndex]?.id; myBench.board.render(); }
+      } }, 'Show me'),
+      el('button', { class: 'btn btn--ghost', onclick: newFault }, 'New fault')),
+    reveal, out,
+    el('details', { class: 'hint-box' }, el('summary', {}, 'Hint: what the trainer noticed'), el('div', { id: 'issueBoxF' })),
+  );
+  renderIssues();
+}
+
+// ------------------------------------------------------------------ lab exam practice
+function stopExamTimer() { if (examTimer) { clearInterval(examTimer); examTimer = null; } }
+function openExam() {
+  const e = EXPERIMENTS[Math.floor(Math.random() * EXPERIMENTS.length)];
+  open(e, 'practice');
+  mode = 'exam';
+  $('#tabs').hidden = true;
+  $('#crumbGroup').textContent = 'Lab exam practice';
+  $('#title').textContent = 'Lab exam practice';
+  $('#aim').textContent = 'A random experiment, an empty board and a clock. Build it without the reference, then submit.';
+  $('#split').classList.add('ref-hidden');
+  $('#showRef').hidden = true; $('#hideRef').hidden = true;
+  myBench.storeKey = null;
+  myBench.load({ chips: [], wires: [], segMode: e.segMode || 'cc' });
+  myBench.board.fit();
+  $('[data-mt="steps"]').hidden = true;
+  $('[data-mt="check"]').hidden = true;
+  const tab = $('[data-mt="task"]');
+  tab.hidden = false;
+  tab.textContent = 'Task';
+  renderExamPanel(e);
+  myTab('task');
+  drawSide();
+  $('#examBtn').classList.add('is-active');
+  $('#freeBtn').classList.remove('is-active');
+  $('#saveState').textContent = '';
+  history.replaceState(null, '', '?exam=1');
+}
+function renderExamPanel(e) {
+  const host = $('#myTask');
+  const clock = el('div', { class: 'exam-clock' }, '20:00');
+  const minutes = el('select', { class: 'input exam-min', 'aria-label': 'Time limit' }, ...[10, 15, 20, 30, 45].map(m => el('option', { value: m, selected: m === 20 }, `${m} min`)));
+  const result = el('div');
+  const chips = [...new Set(e.build().chips.map(c => c.type))];
+  const startBtn = el('button', { class: 'btn btn--primary', onclick: () => {
+    stopExamTimer();
+    examLimit = +minutes.value * 60; examStart = Date.now();
+    startBtn.textContent = 'Restart timer';
+    examTimer = setInterval(() => {
+      const left = Math.max(0, examLimit - (Date.now() - examStart) / 1000);
+      clock.textContent = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
+      clock.classList.toggle('low', left < 60);
+      if (!left) { stopExamTimer(); submit(true); }
+    }, 250);
+  } }, 'Start timer');
+  function submit(timeUp) {
+    stopExamTimer();
+    const used = examStart ? Math.round((Date.now() - examStart) / 1000) : null;
+    const pass = runCheck(result, { mark: false });
+    result.prepend(el('div', { class: 'exam-score ' + (pass ? 'pass' : 'fail') },
+      el('strong', {}, timeUp ? (pass ? 'Time up, but it works' : 'Time is up') : pass ? 'Pass' : 'Not working yet'),
+      el('span', {}, used != null ? `Time used: ${Math.floor(used / 60)} min ${used % 60} s.` : 'The timer was not running.'),
+      el('button', { class: 'btn btn--sm', onclick: () => open(e, 'reference') }, 'See the reference build')));
+  }
+  host.replaceChildren(
+    el('div', { class: 'exam-head' }, clock, minutes, startBtn),
+    el('div', { class: 'task-card' },
+      el('p', { class: 'panel-label', style: 'margin-top:0' }, 'Your task'),
+      el('h3', {}, e.title),
+      el('p', {}, e.aim),
+      el('p', { class: 'panel-label' }, 'Connections'),
+      el('table', { class: 'table' }, el('tbody', {},
+        ...e.inputs.map(i => el('tr', {}, el('td', { class: 'mono' }, 'S' + i.sw), el('td', {}, i.name + ' (input)'))),
+        ...e.outputs.map(o => el('tr', {}, el('td', { class: 'mono' }, padLabel(o.pad)), el('td', {}, o.name + ' (output)'))))),
+      el('p', { class: 'hint' }, `Chips available: ${chips.join(', ')}. Pinouts are in the Parts tab and in Breadboard basics.`)),
+    el('div', { class: 'mode-actions' },
+      el('button', { class: 'btn btn--primary', onclick: () => submit(false) }, 'Submit'),
+      el('button', { class: 'btn btn--ghost', onclick: openExam }, 'New task'),
+      el('button', { class: 'btn btn--ghost', onclick: () => open(null, 'practice') }, 'Leave exam')),
+    result,
+  );
+}
+$('#examBtn').addEventListener('click', openExam);
+
 // ------------------------------------------------------------------ boot
 (function boot() {
   const q = new URLSearchParams(location.search);
   const e = EXPERIMENTS.find(x => x.id === q.get('exp'));
   const v = q.get('view');
-  if (e) open(e, ['overview', 'reference', 'practice'].includes(v) ? v : 'overview');
+  if (q.get('exam')) openExam();
+  else if (e) open(e, ['overview', 'reference', 'practice', 'fault'].includes(v) ? v : 'overview');
   else open(null, 'practice'); // the free breadboard is the front door
 })();

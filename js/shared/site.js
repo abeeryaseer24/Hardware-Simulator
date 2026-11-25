@@ -5,6 +5,7 @@ export const YEAR = 2026;
 const REPO = 'https://github.com/abeeryaseer24/Hardware-Simulator';
 
 const NAV = [
+  { href: 'practice.html', label: 'Practice', key: 'practice' },
   { href: 'digital.html', label: 'Digital Lab', key: 'digital' },
   { href: 'analog.html', label: 'Analog Lab', key: 'analog' },
   { href: 'toolkit.html', label: 'Tools', key: 'toolkit' },

@@ -22,7 +22,7 @@ export function pinoutSVG(def, levels = null, opts = {}) {
   s.append(svg('path', { d: `M${bx},${by + bh / 2 - 8} a8,8 0 0 1 0,16`, class: 'po-notch' }));
   s.append(svg('circle', { cx: bx + 9, cy: by + bh - 9, r: 3, class: 'po-dot' }));
   const lab = svg('text', { x: bx + bw / 2, y: by + bh / 2 + 6, class: 'po-label' });
-  lab.textContent = '74LS' + def.id.slice(2);
+  lab.textContent = def.id.startsWith('74') ? '74LS' + def.id.slice(2) : 'CD' + def.id;
   s.append(lab);
 
   for (let p = 1; p <= n; p++) {

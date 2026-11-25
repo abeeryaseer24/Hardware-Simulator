@@ -2,7 +2,7 @@
 import { svg, fmtSI } from '../shared/site.js';
 import {
   VIEW, APADS, COLS, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, colX, holeId, railHasHole,
-  parsePoint, pointXY, baseNode, partHoles, opampPin, PARTS, LED_RGB, partLabel, describePoint,
+  parsePoint, pointXY, baseNode, partHoles, opampPin, PARTS, LED_RGB, partLabel, describePoint, DIP8, THREE, LEG_NAMES, isDip, dipCount,
 } from './atrainer.js';
 
 const P = 15;
@@ -32,6 +32,7 @@ function resistorBands(v) {
 }
 
 export class AnalogBoard {
+  static count = 0;
   constructor(host, trainer, hooks) {
     this.host = host;
     this.t = trainer;
@@ -45,6 +46,7 @@ export class AnalogBoard {
     this.selected = null;
     this.focusIds = new Set();
     this.vb = { x: 0, y: 0, w: VIEW.w, h: VIEW.h };
+    this.uid = ++AnalogBoard.count;
     this.build();
   }
 
@@ -55,7 +57,7 @@ export class AnalogBoard {
     const defs = svg('defs');
     defs.innerHTML = `<linearGradient id="chipBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2f33"/><stop offset="1" stop-color="#15181a"/></linearGradient>
       <filter id="soft" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-opacity=".45"/></filter>
-      <clipPath id="scopeClip"><rect x="44" y="524" width="300" height="140"/></clipPath>
+      <clipPath id="scopeClip${this.uid}"><rect x="44" y="524" width="300" height="140"/></clipPath>
       <radialGradient id="ledHalo"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`;
     s.append(defs);
     s.append(svg('rect', { x: 8, y: 8, width: VIEW.w - 16, height: VIEW.h - 16, rx: 14, class: 't-case' }));
@@ -96,8 +98,8 @@ export class AnalogBoard {
     s.append(svg('rect', { x: 44, y: 524, width: 300, height: 140, rx: 5, class: 'a-scope' }));
     for (let i = 1; i < 10; i++) s.append(svg('line', { x1: 44 + i * 30, x2: 44 + i * 30, y1: 524, y2: 664, class: 'a-grid' }));
     for (let j = 1; j < 8; j++) s.append(svg('line', { x1: 44, x2: 344, y1: 524 + j * 17.5, y2: 524 + j * 17.5, class: 'a-grid' }));
-    this.tr1 = svg('polyline', { class: 'a-tr ch1', points: '', 'clip-path': 'url(#scopeClip)' });
-    this.tr2 = svg('polyline', { class: 'a-tr ch2', points: '', 'clip-path': 'url(#scopeClip)' });
+    this.tr1 = svg('polyline', { class: 'a-tr ch1', points: '', 'clip-path': `url(#scopeClip${this.uid})` });
+    this.tr2 = svg('polyline', { class: 'a-tr ch2', points: '', 'clip-path': `url(#scopeClip${this.uid})` });
     s.append(this.tr1, this.tr2);
     this.scopeTxt = lab(194, 518, '', 'a-tiny mid');
 
@@ -193,12 +195,12 @@ export class AnalogBoard {
   }
   hitPart(x, y) {
     for (const p of this.t.parts) {
-      if (p.type === 'OA') {
-        if (x >= colX(p.col) - 8 && x <= colX(p.col + 3) + 8 && y >= ROWS.e - 4 && y <= ROWS.f + 4) return p;
+      if (isDip(p.type)) {
+        if (x >= colX(p.col) - 8 && x <= colX(p.col + dipCount(p) / 2 - 1) + 8 && y >= ROWS.e - 4 && y <= ROWS.f + 4) return p;
         continue;
       }
       const pts = p.holes.map(pointXY);
-      if (p.type === 'NPN' || p.type === 'PNP') {
+      if (THREE.includes(p.type)) {
         if (Math.abs(x - pts[1].x) < 22 && y > pts[1].y - 30 && y < pts[1].y + 4) return p;
         continue;
       }
@@ -226,7 +228,7 @@ export class AnalogBoard {
       if (!this.readonly && this.mode !== 'place') {
         const onLead = pt && this.t.occupied().get(pt)?.part;
         const part = this.hitPart(p.x, p.y);
-        if (part && !onLead) { down.part = part; down.orig = part.type === 'OA' ? part.col : part.holes.slice(); down.row0 = this.nearestRow(p.y); }
+        if (part && !onLead) { down.part = part; down.orig = isDip(part.type) ? part.col : part.holes.slice(); down.row0 = this.nearestRow(p.y); }
       }
       s.setPointerCapture(e.pointerId);
     });
@@ -241,7 +243,7 @@ export class AnalogBoard {
             const r = s.getBoundingClientRect(), k = down.vb.w / r.width;
             this.vb.x = down.vb.x - dx * k; this.vb.y = down.vb.y - dy * k; this.applyView();
           } else if (this.mode === 'place') {
-            if (down.pt && !APADS[down.pt] && !['OA', 'NPN', 'PNP'].includes(this.place.type)) this.firstHole = down.pt;
+            if (down.pt && !APADS[down.pt] && !isDip(this.place.type) && !THREE.includes(this.place.type)) this.firstHole = down.pt;
           } else if (down.part) {
             this.dragPart(down, p);
           } else if (down.pt) {
@@ -324,16 +326,16 @@ export class AnalogBoard {
     const dc = Math.round((p.x - d.p.x) / P);
     const occ = this.t.occupied();
     const free = (h) => h && !APADS[h] && (!occ.has(h) || occ.get(h).part === part);
-    if (part.type === 'OA') {
+    if (isDip(part.type)) {
       const col = d.orig + dc;
-      if (col === part.col || col < 0 || col + 4 > COLS) return;
-      if (![1, 2, 3, 4, 5, 6, 7, 8].map(n => opampPin(col, n)).every(free)) return;
+      if (col === part.col || col < 0 || col + dipCount(part) / 2 > COLS) return;
+      if (!partHoles({ ...part, col }).every(free)) return;
       part.col = col;
     } else {
       const dr = this.nearestRow(p.y) - d.row0;
       const next = d.orig.map(h => shiftHole(h, dc, dr));
       if (!next.every(free) || next.join() === part.holes.join()) return;
-      if (part.type !== 'NPN' && part.type !== 'PNP' && baseNode(next[0]) === baseNode(next[1])) return;
+      if (!THREE.includes(part.type) && baseNode(next[0]) === baseNode(next[1])) return;
       part.holes = next;
     }
     d.didMove = true;
@@ -346,14 +348,15 @@ export class AnalogBoard {
     const pl = this.place;
     const occ = this.t.occupied();
     const free = (h) => h && !APADS[h] && !occ.has(h);
-    if (pl.type === 'OA') {
-      const col = Math.round((p.x - colX(0)) / P) - 1;
-      const holes = [1, 2, 3, 4, 5, 6, 7, 8].map(n => opampPin(col, n));
-      if (col < 0 || col + 4 > COLS || !holes.every(free)) { this.hooks.notify('The 741 has to straddle the centre channel on free holes.', 'bad'); return; }
-      this.addPart({ type: 'OA', col });
+    if (isDip(pl.type)) {
+      const n = dipCount(pl);
+      const col = Math.round((p.x - colX(0)) / P) - Math.floor(n / 4);
+      const holes = partHoles({ type: pl.type, chip: pl.chip, col });
+      if (col < 0 || col + n / 2 > COLS || !holes.every(free)) { this.hooks.notify('A chip has to straddle the centre channel on free holes.', 'bad'); return; }
+      this.addPart({ type: pl.type, chip: pl.chip, col });
       return;
     }
-    if (pl.type === 'NPN' || pl.type === 'PNP') {
+    if (THREE.includes(pl.type)) {
       const ph = pt && parsePoint(pt);
       if (!ph || ph.kind !== 'hole' || RAIL_ROWS.includes(ph.row)) { this.hooks.notify('Tap a breadboard hole for the middle (base) leg.', 'bad'); return; }
       const holes = [holeId(ph.row, ph.col - 1), pt, holeId(ph.row, ph.col + 1)];
@@ -400,7 +403,7 @@ export class AnalogBoard {
   }
 
   addPart(spec) {
-    const p = this.t.addPart({ ...spec, value: spec.value ?? this.place?.value, color: spec.color ?? this.place?.color });
+    const p = this.t.addPart({ ...spec, value: spec.value ?? this.place?.value, color: spec.color ?? this.place?.color, chip: spec.chip ?? this.place?.chip });
     this.hooks.change();
     this.hooks.notify(`${p.ref} placed. Click it to change its value.`);
   }
@@ -478,22 +481,34 @@ export class AnalogBoard {
   drawPart(p, ghost) {
     const sel = this.selected?.id === p.id;
     const g = svg('g', { class: 'apart' + (sel ? ' is-selected' : '') + (this.focusIds.has(p.id) ? ' is-focus' : '') + (ghost ? ' is-ghost' : ''), 'data-part': p.id });
-    if (p.type === 'OA') {
-      const x0 = colX(p.col) - 6.5, x1 = colX(p.col + 3) + 6.5;
-      for (let n = 1; n <= 8; n++) { const { x, y } = pointXY(opampPin(p.col, n)); g.append(svg('rect', { x: x - 2.6, y: y - 3, width: 5.2, height: 6, rx: 1, class: 'leg' })); }
-      g.append(svg('rect', { x: x0, y: ROWS.e + 2, width: x1 - x0, height: ROWS.f - ROWS.e - 4, rx: 2.5, class: 'chip-body', filter: 'url(#soft)' }));
+    if (isDip(p.type)) {
+      const n = dipCount(p);
+      const x0 = colX(p.col) - 6.5, x1 = colX(p.col + n / 2 - 1) + 6.5;
+      for (const h of partHoles(p)) { const { x, y } = pointXY(h); g.append(svg('rect', { x: x - 2.6, y: y - 3, width: 5.2, height: 6, rx: 1, class: 'leg' })); }
+      g.append(svg('rect', { x: x0, y: ROWS.e + 2, width: x1 - x0, height: ROWS.f - ROWS.e - 4, rx: 2.5, class: 'chip-body' }));
       g.append(svg('path', { d: `M${x0},${(ROWS.e + ROWS.f) / 2 - 4.5} a4.5,4.5 0 0 1 0,9`, class: 'chip-notch' }));
       g.append(svg('circle', { cx: x0 + 4.5, cy: ROWS.f - 6.5, r: 1.4, class: 'chip-dot' }));
-      const t = svg('text', { x: (x0 + x1) / 2 + 2, y: (ROWS.e + ROWS.f) / 2 + 3, class: 'chip-label' }); t.textContent = 'µA741';
+      const t = svg('text', { x: (x0 + x1) / 2 + 2, y: (ROWS.e + ROWS.f) / 2 + 3, class: 'chip-label' }); t.textContent = partLabel(p);
       g.append(t);
       return g;
     }
     const pts = p.holes.map(pointXY);
+    if (THREE.includes(p.type) && !['NPN', 'PNP'].includes(p.type)) {
+      // TO-220 package: metal tab, black body, three legs
+      const mid = pts[1], top = mid.y - 30;
+      for (const q of pts) g.append(svg('line', { x1: q.x, y1: q.y, x2: q.x, y2: top + 22, class: 'a-lead' }));
+      g.append(svg('rect', { x: mid.x - 19, y: top - 9, width: 38, height: 11, rx: 2, class: 'a-tab' }));
+      g.append(svg('circle', { cx: mid.x, cy: top - 3.5, r: 2.6, class: 'a-tabhole' }));
+      g.append(svg('rect', { x: mid.x - 19, y: top + 1, width: 38, height: 22, rx: 2, class: 'a-to220' }));
+      const t = svg('text', { x: mid.x, y: top + 15, class: 'a-partlab inv' }); t.textContent = partLabel(p); g.append(t);
+      LEG_NAMES[p.type].forEach((L, i) => { const tt = svg('text', { x: pts[i].x, y: pts[i].y + 11, class: 'a-pin' }); tt.textContent = L; g.append(tt); });
+      return g;
+    }
     if (p.type === 'NPN' || p.type === 'PNP') {
       const [c, b, e] = pts;
       const top = b.y - 22;
       for (const q of pts) g.append(svg('line', { x1: q.x, y1: q.y, x2: q.x, y2: top + 10, class: 'a-lead' }));
-      g.append(svg('path', { d: `M${c.x - 6},${top + 12} V${top + 4} A13,10 0 0 1 ${e.x + 6},${top + 4} V${top + 12} Z`, class: 'a-to92', filter: 'url(#soft)' }));
+      g.append(svg('path', { d: `M${c.x - 6},${top + 12} V${top + 4} A13,10 0 0 1 ${e.x + 6},${top + 4} V${top + 12} Z`, class: 'a-to92' }));
       const t = svg('text', { x: b.x, y: top + 6, class: 'a-partlab inv' }); t.textContent = p.type === 'NPN' ? '547' : '557'; g.append(t);
       ['C', 'B', 'E'].forEach((L, i) => { const tt = svg('text', { x: pts[i].x, y: pts[i].y + 11, class: 'a-pin' }); tt.textContent = L; g.append(tt); });
       return g;
@@ -610,10 +625,11 @@ export class AnalogBoard {
       }
     } else if (this.mode === 'place' && c && this.place) {
       const pt = this.hitPoint(c.x, c.y);
-      if (this.place.type === 'OA') {
-        const col = Math.max(0, Math.min(COLS - 4, Math.round((c.x - colX(0)) / P) - 1));
-        L.append(this.drawPart({ id: '_g', type: 'OA', col }, true));
-      } else if ((this.place.type === 'NPN' || this.place.type === 'PNP') && pt && parsePoint(pt)?.kind === 'hole') {
+      if (isDip(this.place.type)) {
+        const n = dipCount(this.place);
+        const col = Math.max(0, Math.min(COLS - n / 2, Math.round((c.x - colX(0)) / P) - Math.floor(n / 4)));
+        L.append(this.drawPart({ id: '_g', type: this.place.type, chip: this.place.chip, col }, true));
+      } else if (THREE.includes(this.place.type) && pt && parsePoint(pt)?.kind === 'hole') {
         const ph = parsePoint(pt);
         if (ph.col > 0 && ph.col < COLS - 1 && !RAIL_ROWS.includes(ph.row)) L.append(this.drawPart({ id: '_g', type: this.place.type, holes: [holeId(ph.row, ph.col - 1), pt, holeId(ph.row, ph.col + 1)] }, true));
       } else if (pt) {

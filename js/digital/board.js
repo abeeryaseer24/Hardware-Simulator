@@ -119,7 +119,7 @@ export class Board {
     this.ledEls = [];
     for (let i = 0; i < 8; i++) {
       const x = 78 + i * 50;
-      const glow = svg('circle', { cx: x, cy: 78, r: 24, fill: 'url(#ledGlow)', class: 'led-glow' });
+      const glow = svg('circle', { cx: x, cy: 78, r: 24, fill: 'rgba(255,60,50,.55)', class: 'led-glow' });
       const body = svg('circle', { cx: x, cy: 78, r: 12, class: 'led' });
       g.append(glow, body, svg('ellipse', { cx: x - 4, cy: 73, rx: 3.5, ry: 2.2, class: 'led-shine' }));
       const t = svg('text', { x, y: 112, class: 't-small' }); t.textContent = 'L' + (i + 1);
@@ -560,11 +560,11 @@ export class Board {
         const lv = c.powered && res ? res.read(pinHole(c, p)) : null;
         g.append(svg('rect', { x: x - 2.6, y: y - 3, width: 5.2, height: 6, rx: 1, class: 'leg' + (lv === 1 ? ' hi' : lv === 0 ? ' lo' : '') }));
       }
-      g.append(svg('rect', { x: x0, y: ROWS.e + 2, width: x1 - x0, height: ROWS.f - ROWS.e - 4, rx: 2.5, class: 'chip-body', filter: 'url(#soft)' }));
+      g.append(svg('rect', { x: x0, y: ROWS.e + 2, width: x1 - x0, height: ROWS.f - ROWS.e - 4, rx: 2.5, class: 'chip-body' }));
       g.append(svg('path', { d: `M${x0},${(ROWS.e + ROWS.f) / 2 - 4.5} a4.5,4.5 0 0 1 0,9`, class: 'chip-notch' }));
       g.append(svg('circle', { cx: x0 + 4.5, cy: ROWS.f - 6.5, r: 1.4, class: 'chip-dot' }));
       const t = svg('text', { x: (x0 + x1) / 2 + 2, y: (ROWS.e + ROWS.f) / 2 + 1, class: 'chip-label' });
-      t.textContent = '74LS' + c.type.slice(2);
+      t.textContent = c.type.startsWith('74') ? '74LS' + c.type.slice(2) : 'CD' + c.type;
       const r = svg('text', { x: (x0 + x1) / 2 + 2, y: (ROWS.e + ROWS.f) / 2 + 9, class: 'chip-ref' });
       r.textContent = c.ref;
       g.append(t, r);

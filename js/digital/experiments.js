@@ -637,5 +637,28 @@ const sequential = [
   },
 ];
 
-export const EXPERIMENTS = [...basic, ...universal, ...arithmetic, ...msi, ...sequential];
+
+const extra = [
+  {
+    id: 'chaser-4017', group: 'Counters & registers', title: 'LED chaser (CD4017)',
+    aim: 'Light one LED at a time in sequence with a CD4017 decade counter.',
+    theory: '<p>The 4017 counts clock pulses and drives exactly one of its ten outputs HIGH: Q0, then Q1, and so on, wrapping after Q9. It is the chip behind running-light displays. RST and INH (clock inhibit) must be held LOW for it to count. Here Q0–Q7 drive L1–L8; swap P1 for the CLK pad to make the lights run on their own.</p>',
+    inputs: [],
+    outputs: Array.from({ length: 8 }, (_, i) => ({ name: 'Q' + i, pad: 'led' + (i + 1) })),
+    script: Array.from({ length: 12 }, (_, k) => {
+      const n = k % 10;
+      return { ...(k ? { pulse } : {}), expect: Object.fromEntries(Array.from({ length: 8 }, (_, i) => ['Q' + i, +(i === n)])), note: k ? `pulse ${k}: Q${n} high` : 'after power-up: Q0 high' };
+    }),
+    build: () => make((b) => {
+      const u = b.chip('4017', 26);
+      b.power(u);
+      b.wire(pulse, u.p(14), 'clock');
+      b.wire(u.p(15), b.lo(u.col(15), true), 'RST LOW');
+      b.wire(u.p(13), b.lo(u.col(13), true), 'INH LOW');
+      [3, 2, 4, 7, 10, 1, 5, 6].forEach((p, i) => b.wire(u.p(p), 'led' + (i + 1), 'Q' + i));
+    }),
+  },
+];
+
+export const EXPERIMENTS = [...basic, ...universal, ...arithmetic, ...msi, ...sequential, ...extra];
 export const EXP_GROUPS = [...new Set(EXPERIMENTS.map(e => e.group))];
