@@ -185,3 +185,8 @@ export function fmtSI(v, unit = '', digits = 3) {
 }
 
 export const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap';
+
+// Offline support: store the app on this device after the first visit.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}

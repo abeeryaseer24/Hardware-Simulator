@@ -1,0 +1,28 @@
+{
+  "name": "Benchnote · Virtual EEE lab",
+  "short_name": "Benchnote",
+  "description": "A free breadboard for every circuit: digital and analog trainers, K-map solver and lab tools.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f3d30",
+  "theme_color": "#0f3d30",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { pinoutSVG, pinRoles } from './digital/pinout.js';
 import { solveFunction, truthFromExpr, parseIndexList, termSOP, termPOS } from './shared/boolean.js';
 import { buildLogic } from './digital/autobuild.js';
 import { diagnose, autoFix, describeNode } from './digital/autofix.js';
+import { takeSharedCircuit } from './shared/share.js';
 
 mountChrome('digital');
 bindSideToggle();
@@ -580,6 +581,15 @@ function loadPracticeBoard() {
   myBench.board.focusWire = null;
   ghostOn = false;
   if (innerWidth < 760) myBench.board.focusBreadboard(); else myBench.board.fit();
+  openShared();
+}
+async function openShared() {
+  const data = await takeSharedCircuit();
+  if (!data || !Array.isArray(data.chips)) return;
+  const mine = myBench.trainer.serialize();
+  if ((mine.chips.length || mine.wires.length) && !confirm('Open the shared circuit? It replaces what is on your board now (Undo brings yours back).')) return;
+  myBench.load(data, { fresh: false });
+  toast('Opened a shared circuit. It is saved on this device now.', 'ok');
 }
 function leavePractice() {
   mode = 'practice';

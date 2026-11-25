@@ -40,6 +40,11 @@ Ohm's law · series and parallel resistors · voltage divider · KVL and KCL · 
 
 Basic gates · NAND and NOR universality · half and full adder · half subtractor · 7483 adder · 7485 comparator · 74153 MUX · Boolean function with 74151 · 74138 decoder · 74155 demux · 74148 encoder · 7447 BCD to 7-segment · SR latch · 7474 D flip-flop · 7476 JK flip-flop · 7493 counter · 7490 + 7447 decade counter · 74161 mod-10 counter · 74194 shift register
 
+## Share and offline
+
+- **Share:** the Share button on any breadboard makes a link that carries the whole circuit (packed into the part after `#`). Your friend opens it and gets the same board. Nothing is uploaded.
+- **Offline:** after the first visit the app is stored on the device and works with no internet. On a phone it can be added to the home screen like an app.
+
 ## How the simulation works
 
 - **Digital:** the breadboard is reduced to electrical nodes; chips are evaluated until the circuit settles, with detection of output conflicts, floating inputs, unpowered or reversed chips, and oscillation.

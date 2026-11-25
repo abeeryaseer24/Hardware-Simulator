@@ -2,6 +2,7 @@
 import { el } from '../shared/site.js';
 import { Trainer } from './model.js';
 import { Board } from './board.js';
+import { shareCircuit, SHARE_ICON } from '../shared/share.js';
 
 const FREQS = [0.5, 1, 2, 5, 10];
 
@@ -123,6 +124,7 @@ export function benchToolbar(bench, { editable }) {
     const redo = b('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>', 'Redo (Ctrl+Y)', () => bench.doRedo());
     const clear = b('Clear', 'Remove every chip and wire', () => bench.clear());
     groups.push(el('div', { class: 'tool-group' }, undo, redo, clear));
+    groups.push(el('div', { class: 'tool-group' }, b(SHARE_ICON + '<span>Share</span>', 'Send this circuit to a friend as a link', () => shareCircuit(bench.trainer.serialize(), 'My digital circuit'), { class: 'tb-share' })));
     bench._undoBtns = { undo, redo };
   }
   return el('div', { class: 'stage-toolbar' }, ...groups);

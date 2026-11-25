@@ -7,6 +7,7 @@ import { AEXPERIMENTS } from './analog/aexperiments.js';
 import { renderSchematic } from './analog/schematic.js';
 import { pinoutSVG, pinRoles } from './digital/pinout.js';
 import { FAMILIES } from './digital/chips.js';
+import { takeSharedCircuit } from './shared/share.js';
 
 const WORKBENCH = document.body.dataset.workbench === '1';
 mountChrome(WORKBENCH ? 'practice' : 'analog');
@@ -736,6 +737,15 @@ function loadPracticeBoard() {
   myBench.board.focusIds = new Set();
   if (!myBench.restoreStored()) myBench.load({ parts: [], wires: [], settings: exp ? { ...DEFAULT_SETTINGS(), ...structuredClone(exp.settings) } : DEFAULT_SETTINGS() });
   if (innerWidth < 760) myBench.board.focusBreadboard(); else myBench.board.fit();
+  openShared();
+}
+async function openShared() {
+  const data = await takeSharedCircuit();
+  if (!data || !Array.isArray(data.parts)) return;
+  const mine = myBench.t.serialize();
+  if ((mine.parts.length || mine.wires.length) && !confirm('Open the shared circuit? It replaces what is on your board now (Undo brings yours back).')) return;
+  myBench.load(data, { fresh: false });
+  toast('Opened a shared circuit. It is saved on this device now.', 'ok');
 }
 function leavePractice() {
   mode = 'practice';
