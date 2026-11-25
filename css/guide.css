@@ -178,3 +178,4 @@
 .cc-bands i { display: block; width: 7px; height: 18px; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .18); }
 .cc-bands i:last-child { margin-left: 6px; }
 .cc-names { color: var(--ink-2); font-size: .84rem; }
+.about-purpose { font-size: 1.04rem; line-height: 1.75; color: var(--ink) !important; padding: 14px 18px; border-left: 3px solid var(--brand); background: var(--brand-tint); border-radius: 0 10px 10px 0; }

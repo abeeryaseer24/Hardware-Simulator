@@ -102,3 +102,24 @@
 .plot-sel { height: 28px; width: auto; font-size: .76rem; padding: 0 6px; }
 .plot-cv { width: 100%; height: 220px; display: block; }
 .plot-note { margin: 4px 0 0; font-size: .74rem; }
+
+.pick-wrap { display: flex; align-items: center; gap: 4px; }
+.pick-wrap .pick-val { width: 74px; }
+.pick-val.bad { border-color: var(--bad); box-shadow: 0 0 0 2px color-mix(in srgb, var(--bad) 25%, transparent); }
+.pick-unit { font-size: .74rem; color: var(--muted); font-weight: 600; min-width: 14px; }
+
+/* instrument probes */
+.p-shadow { fill: none; stroke: rgba(0, 0, 0, .55); stroke-width: 6.2; stroke-linecap: round; }
+.p-core { fill: none; stroke-width: 4.4; stroke-linecap: round; }
+.p-body { stroke: rgba(0, 0, 0, .55); stroke-width: .8; }
+.p-needle { fill: #cfd5d8; stroke: #6c7378; stroke-width: .5; }
+.p-hook { fill: none; stroke: #cfd5d8; stroke-width: 1.6; stroke-linecap: round; }
+.p-tag { stroke: rgba(0, 0, 0, .4); stroke-width: .6; }
+.p-tagt { fill: #fff; font: 700 7.5px var(--f-body); text-anchor: middle; pointer-events: none; }
+.p-tagt.dark { fill: #111; }
+.wire.is-probe.in-net .p-shadow { stroke: var(--gold-hi); stroke-width: 9; }
+.wire.is-probe.is-selected .p-shadow { stroke: #fff; stroke-width: 9; }
+.howto { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 10px; font-size: .82rem; }
+.howto summary { cursor: pointer; font-weight: 600; }
+.howto ul { margin: 8px 0 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--ink-2); }
+.howto i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }

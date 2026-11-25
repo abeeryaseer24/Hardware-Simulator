@@ -1,8 +1,9 @@
 /* K-Map solver (inside the Digital Lab shell) */
 
 .km-scroll { background: var(--bg); }
-.km-wrap { max-width: 1180px; padding: 22px 26px 50px; display: grid; gap: 18px; }
+.km-wrap { max-width: 1180px; padding: 22px 26px 50px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .km-card { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-1); }
+@media (max-width: 640px) { .km-wrap { padding: 14px 12px 40px; gap: 14px; } .km-card { padding: 14px; } }
 .km-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-bottom: 14px; }
 .km-step { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin: 0 0 14px; }
 .km-card-head .km-step { margin: 0; }

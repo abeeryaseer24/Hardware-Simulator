@@ -1,5 +1,6 @@
 // Analog trainer renderer and pointer handling.
 import { svg, fmtSI } from '../shared/site.js';
+import { addPinch } from '../shared/pinch.js';
 import {
   VIEW, APADS, COLS, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, colX, holeId, railHasHole,
   parsePoint, pointXY, baseNode, partHoles, opampPin, PARTS, LED_RGB, partLabel, describePoint, DIP8, THREE, LEG_NAMES, isDip, dipCount,
@@ -19,6 +20,19 @@ function shiftHole(h, dc, dr) {
 export const AWIRE_COLORS = {
   red: '#d62b2b', black: '#23262a', blue: '#2563c9', green: '#1f9a4c',
   yellow: '#e8b80c', orange: '#ec7a1c', white: '#f1f1ec', purple: '#7d4bc4',
+};
+// instrument leads drawn as real probes
+const PROBES = {
+  dmmV: { label: 'V', color: '#d62b2b', kind: 'needle' },
+  dmmC: { label: 'COM', color: '#23262a', kind: 'needle' },
+  ch1: { label: 'CH1', color: '#f2c40f', kind: 'clip', dark: true },
+  ch2: { label: 'CH2', color: '#23b5c9', kind: 'clip', dark: true },
+  ch1g: { label: 'CH1 ⏚', color: '#23262a', kind: 'clip' },
+  ch2g: { label: 'CH2 ⏚', color: '#23262a', kind: 'clip' },
+  a1in: { label: 'A1 +', color: '#ec7a1c', kind: 'needle' },
+  a1out: { label: 'A1 −', color: '#23262a', kind: 'needle' },
+  a2in: { label: 'A2 +', color: '#ec7a1c', kind: 'needle' },
+  a2out: { label: 'A2 −', color: '#23262a', kind: 'needle' },
 };
 const BAND = ['#1b1b1b', '#7b4a1e', '#d22d2d', '#ef7d1a', '#f2d01b', '#1f9a4c', '#2563c9', '#7d4bc4', '#8a8a8a', '#f4f4f4'];
 
@@ -178,7 +192,15 @@ export class AnalogBoard {
     this.applyView();
   }
   fit() { this.vb = { x: 0, y: 0, w: VIEW.w, h: VIEW.h }; this.applyView(); }
-  focusBreadboard() { this.vb = { x: 30, y: 196, w: 950, h: 300 }; this.applyView(); }
+  focusBreadboard() {
+    // match the stage's shape so a tall phone screen still zooms in on the holes
+    const r = this.svg.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) { requestAnimationFrame(() => { if (this.svg.getBoundingClientRect().width > 0) this.focusBreadboard(); }); }
+    const a = r.width > 0 && r.height > 0 ? r.width / r.height : 3.2;
+    const w = a >= 3 ? 950 : Math.max(520, Math.min(950, 570 * a));
+    const h = w / a;
+    this.vb = { x: 30, y: 346 - h / 2, w, h }; this.applyView();
+  }
   toSvg(e) { const pt = this.svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(this.svg.getScreenCTM().inverse()); }
 
   hitPoint(x, y) {
@@ -217,6 +239,8 @@ export class AnalogBoard {
   bind() {
     const s = this.svg;
     let down = null;
+    this.resetGesture = () => { down = null; this.pending = null; this.firstHole = null; this.renderOverlay(); };
+    addPinch(this);
     s.addEventListener('wheel', (e) => { e.preventDefault(); const p = this.toSvg(e); this.zoom(e.deltaY > 0 ? 1.12 : 1 / 1.12, p.x, p.y); }, { passive: false });
     s.addEventListener('pointerdown', (e) => {
       if (e.button === 2) return;
@@ -574,9 +598,32 @@ export class AnalogBoard {
       const d = this.wirePath(w.a, w.b);
       const col = AWIRE_COLORS[w.color] || w.color;
       const inNet = net && this.t.uf?.find(baseNode(w.a)) === net;
-      const g = svg('g', { class: 'wire' + (this.selected?.id === w.id ? ' is-selected' : '') + (inNet ? ' in-net' : '') + (net && !inNet ? ' is-dim' : '') + (this.focusIds.has(w.id) ? ' is-focus' : ''), 'data-wire': w.id });
-      g.append(svg('path', { d, class: 'w-hit' }), svg('path', { d, class: 'w-shadow' }), svg('path', { d, class: 'w-core', stroke: col }), svg('path', { d, class: 'w-gloss' }));
-      for (const pt of [w.a, w.b]) { const { x, y } = pointXY(pt); g.append(svg('circle', { cx: x, cy: y, r: 3.3, class: 'w-end', fill: col })); }
+      const probe = PROBES[w.a] ? { pad: w.a, tip: w.b } : PROBES[w.b] ? { pad: w.b, tip: w.a } : null;
+      const g = svg('g', { class: 'wire' + (probe ? ' is-probe' : '') + (this.selected?.id === w.id ? ' is-selected' : '') + (inNet ? ' in-net' : '') + (net && !inNet ? ' is-dim' : '') + (this.focusIds.has(w.id) ? ' is-focus' : ''), 'data-wire': w.id });
+      if (probe && !APADS[probe.tip]) {
+        // instrument lead: thick cable, a probe tip where it meets the board, and a label
+        const P2 = PROBES[probe.pad];
+        g.append(svg('path', { d, class: 'w-hit' }), svg('path', { d, class: 'p-shadow' }), svg('path', { d, class: 'p-core', stroke: P2.color }));
+        const A = pointXY(probe.pad), B = pointXY(probe.tip);
+        const ang = Math.atan2(B.y - A.y, B.x - A.x) * 180 / Math.PI;
+        const tip = svg('g', { transform: `translate(${B.x},${B.y}) rotate(${ang})` });
+        if (P2.kind === 'clip') {
+          tip.append(svg('rect', { x: -17, y: -3.6, width: 12, height: 7.2, rx: 2, fill: P2.color, class: 'p-body' }),
+            svg('path', { d: 'M-5,-2.2 C1,-2.2 2,2.2 -1,2.2', class: 'p-hook' }));
+        } else {
+          tip.append(svg('rect', { x: -19, y: -3.4, width: 13, height: 6.8, rx: 2.5, fill: P2.color, class: 'p-body' }),
+            svg('path', { d: 'M-6,-1.6 L0,0 L-6,1.6 Z', class: 'p-needle' }));
+        }
+        g.append(tip);
+        const lx = B.x - Math.cos(ang * Math.PI / 180) * 30, ly = B.y - Math.sin(ang * Math.PI / 180) * 30 - 9;
+        const tw = P2.label.length * 5.6 + 8;
+        g.append(svg('rect', { x: lx - tw / 2, y: ly - 7, width: tw, height: 12, rx: 3, fill: P2.color, class: 'p-tag' }));
+        const tt = svg('text', { x: lx, y: ly + 2, class: 'p-tagt' + (P2.dark ? ' dark' : '') }); tt.textContent = P2.label; g.append(tt);
+        g.append(svg('circle', { cx: A.x, cy: A.y, r: 4.2, class: 'w-end', fill: P2.color }));
+      } else {
+        g.append(svg('path', { d, class: 'w-hit' }), svg('path', { d, class: 'w-shadow' }), svg('path', { d, class: 'w-core', stroke: col }), svg('path', { d, class: 'w-gloss' }));
+        for (const pt of [w.a, w.b]) { const { x, y } = pointXY(pt); g.append(svg('circle', { cx: x, cy: y, r: 3.3, class: 'w-end', fill: col })); }
+      }
       const t = svg('title'); t.textContent = `${describePoint(w.a)} ↔ ${describePoint(w.b)}`; g.append(t);
       L.append(g);
     }

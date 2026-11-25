@@ -16,7 +16,7 @@
   .bench__side--right.is-open { transform: none; }
   .drawer-toggle { display: inline-flex; }
 }
-@media (max-width: 760px) { .bench { grid-template-columns: 1fr; height: auto; } .bench__stage { min-height: 60vh; } }
+@media (max-width: 760px) { .bench { grid-template-columns: 1fr; height: auto; } .bench__stage { min-height: 70vh; order: -1; } .bench__side--left { max-height: 55vh; border-right: 0; border-top: 1px solid var(--rule); } }
 /* Analog bench */
 
 body.is-bench { overflow: hidden; }

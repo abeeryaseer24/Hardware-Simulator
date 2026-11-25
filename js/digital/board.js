@@ -1,5 +1,6 @@
 // Breadboard trainer renderer + pointer interaction.
 import { svg } from '../shared/site.js';
+import { addPinch } from '../shared/pinch.js';
 import { CHIPS } from './chips.js';
 import {
   P, COLS, VIEW, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, PADS,
@@ -255,7 +256,15 @@ export class Board {
     this.applyView();
   }
   fit() { this.vb = { x: 0, y: 0, w: VIEW.w, h: VIEW.h }; this.applyView(); }
-  focusBreadboard() { this.vb = { x: 30, y: 196, w: 950, h: 300 }; this.applyView(); }
+  focusBreadboard() {
+    // match the stage's shape so a tall phone screen still zooms in on the holes
+    const r = this.svg.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) { requestAnimationFrame(() => { if (this.svg.getBoundingClientRect().width > 0) this.focusBreadboard(); }); }
+    const a = r.width > 0 && r.height > 0 ? r.width / r.height : 3.2;
+    const w = a >= 3 ? 950 : Math.max(520, Math.min(950, 570 * a));
+    const h = w / a;
+    this.vb = { x: 30, y: 346 - h / 2, w, h }; this.applyView();
+  }
 
   toSvg(evt) {
     const pt = this.svg.createSVGPoint();
@@ -300,6 +309,8 @@ export class Board {
   bindPointer() {
     const s = this.svg;
     let down = null;
+    this.resetGesture = () => { down = null; this.pending = null; this.renderOverlay(); };
+    addPinch(this);
 
     s.addEventListener('wheel', (e) => {
       e.preventDefault();

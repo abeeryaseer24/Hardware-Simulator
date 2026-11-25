@@ -579,7 +579,7 @@ function loadPracticeBoard() {
   myBench.board.guide = null;
   myBench.board.focusWire = null;
   ghostOn = false;
-  myBench.board.fit();
+  if (innerWidth < 760) myBench.board.focusBreadboard(); else myBench.board.fit();
 }
 function leavePractice() {
   mode = 'practice';

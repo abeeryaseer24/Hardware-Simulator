@@ -88,7 +88,8 @@ body.lab-page { overflow: hidden; }
 .head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .lab-head h1 { font-size: 1.45rem; letter-spacing: -0.025em; margin: 0 0 2px; }
 .lab-head .aim { color: var(--ink-2); font-size: .9rem; margin: 0 0 10px; max-width: 90ch; }
-.lab-tabs { display: flex; gap: 2px; margin-top: 2px; }
+.lab-tabs { display: flex; gap: 2px; margin-top: 2px; overflow-x: auto; scrollbar-width: none; }
+.lab-tabs::-webkit-scrollbar { display: none; }
 .lab-tabs button {
   border: 0; background: transparent; cursor: pointer;
   padding: 10px 14px 11px;
@@ -284,7 +285,8 @@ body.lab-page { overflow: hidden; }
   .lab-view { overflow: visible; }
   .lab-head { padding: 12px 14px 0; }
   .ov { padding: 16px 14px 30px; }
-  .lab-tabs button { padding: 9px 9px 10px; font-size: .84rem; }
+  .lab-tabs button { padding: 9px 8px 10px; font-size: .84rem; white-space: nowrap; flex: none; }
+  .lab-tabs .num { display: none; }
 }
 .side-head { font-size: .82rem; font-weight: 650; color: var(--ink); margin: 6px 8px 2px; }
 .side-sub { font-size: .76rem; color: var(--muted); margin: 0 8px 10px; line-height: 1.45; }

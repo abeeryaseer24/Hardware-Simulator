@@ -337,4 +337,12 @@ export const AEXPERIMENTS = [
   },
 ];
 
+for (const e of AEXPERIMENTS) {
+  const uses = (id) => e.wires.some(x => x.a === id || x.b === id);
+  // clip the probe grounds to the nearest ground rail (bottom if it is grounded)
+  const low = e.wires.some(x => /^g\d$/.test(x.a) && /^bn/.test(x.b));
+  if (uses('ch1')) e.wires.push(w('ch1g', low ? 'bn6' : 'tn50'));
+  if (uses('ch2')) e.wires.push(w('ch2g', low ? 'bn7' : 'tn51'));
+}
+
 export const AGROUPS = [...new Set(AEXPERIMENTS.map(e => e.group))];

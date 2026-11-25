@@ -269,6 +269,13 @@ function renderInstruments(bench, host, controls, isRef) {
   const show = (k) => !controls || controls.includes(k);
   const set = () => bench.settingsChanged();
   const items = [el('div', { class: 'live-box', 'data-live': '1' })];
+  items.push(el('details', { class: 'howto', open: !localStorage.getItem('bn-howto-seen') ? true : null, ontoggle: () => localStorage.setItem('bn-howto-seen', '1') },
+    el('summary', {}, 'How to connect the instruments'),
+    el('ul', {},
+      el('li', { html: '<b>Multimeter (voltage)</b>: goes across a part. Drag a wire from <i style="background:#d62b2b"></i>V to the higher-voltage side and from <i style="background:#23262a"></i>COM to the other side.' }),
+      el('li', { html: '<b>Ammeter (current)</b>: goes in series. Break the path, then send the current in at <i style="background:#ec7a1c"></i>A+ and out at A−. Never put an ammeter straight across a supply.' }),
+      el('li', { html: '<b>Oscilloscope</b>: clip <i style="background:#f2c40f"></i>CH1 or <i style="background:#23b5c9"></i>CH2 onto any point. Each probe also has a ground clip (CH1 ⏚, CH2 ⏚): clip it to your circuit ground, just like a real probe.' }),
+      el('li', { html: '<b>Supply</b>: VAR 1 / VAR 2 / ±12 V feed the + rail; any GND terminal feeds the − rail. Logic chips want 5 V.' }))));
   const sec = (title, ...kids) => el('div', { class: 'ins-sec' }, el('p', { class: 'panel-label' }, title), ...kids);
   if (show('var1') || show('var2')) items.push(sec('DC power supply',
     show('var1') ? slider('VAR 1', s.var1, 0, 15, 0.05, v => v.toFixed(2) + ' V', v => { s.var1 = v; set(); }) : null,
@@ -420,8 +427,10 @@ function drawScope(bench, cv) {
 
 // ------------------------------------------------------------------ parts
 const VALUE_PRESETS = {
-  R: [10, 22, 47, 100, 220, 330, 470, 680, 1000, 2200, 3300, 4700, 10000, 22000, 47000, 100000, 1e6],
-  C: [1e-9, 10e-9, 100e-9, 150e-9, 470e-9, 1e-6], CE: [1e-6, 10e-6, 47e-6, 100e-6, 470e-6], L: [1e-3, 10e-3, 100e-3], Z: [3.3, 5.1, 6.2, 9.1, 12],
+  R: [1, 10, 100, 1000, 10000, 100000].flatMap(d => [1, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2].map(x => +(x * d).toPrecision(2))).filter(v => v >= 10).concat([1e6]),
+  C: [10e-12, 100e-12, 1e-9, 2.2e-9, 4.7e-9, 10e-9, 22e-9, 47e-9, 100e-9, 150e-9, 220e-9, 470e-9, 1e-6],
+  CE: [1e-6, 2.2e-6, 4.7e-6, 10e-6, 22e-6, 47e-6, 100e-6, 220e-6, 470e-6, 1000e-6],
+  L: [100e-6, 1e-3, 4.7e-3, 10e-3, 47e-3, 100e-3], Z: [3.3, 4.7, 5.1, 5.6, 6.2, 9.1, 12, 15],
 };
 const ICONS = {
   R: '<rect x="14" y="7" width="20" height="8" rx="3" fill="#d9c08f" stroke="#8a7346"/><path d="M2 11h12M34 11h12" stroke="#8a8a8a" stroke-width="2"/><rect x="18" y="7" width="2" height="8" fill="#7b4a1e"/><rect x="23" y="7" width="2" height="8" fill="#1b1b1b"/><rect x="28" y="7" width="2" height="8" fill="#d22d2d"/>',
@@ -527,11 +536,28 @@ function partButton(type, value, color, label, withValue, chip) {
   }, el('span', { class: 'ico', html: `<svg viewBox="0 0 48 22">${ICONS[type] || ICONS.OA}</svg>` }), el('span', { class: 'nm' }, label));
   row.append(btn);
   if (withValue && (VALUE_PRESETS[type] || type === 'LED')) {
-    const sel = type === 'LED'
-      ? el('select', { class: 'input pick-val', 'aria-label': 'LED colour' }, ...Object.keys(LED_RGB).map(c => el('option', { value: c, selected: pk.color === c }, c)))
-      : el('select', { class: 'input pick-val', 'aria-label': PARTS[type].name + ' value' }, ...VALUE_PRESETS[type].map(v => el('option', { value: v, selected: v === pk.value }, type === 'Z' ? v + ' V' : fmtSI(v, PARTS[type].unit))));
-    sel.addEventListener('change', () => { if (type === 'LED') pk.color = sel.value; else pk.value = +sel.value; if (btn.getAttribute('aria-pressed') === 'true') myBench.board.setPlace({ type, value: pk.value, color: pk.color }); });
-    row.append(sel);
+    const apply = () => { if (btn.getAttribute('aria-pressed') === 'true') myBench.board.setPlace({ type, value: pk.value, color: pk.color }); };
+    if (type === 'LED') {
+      const sel = el('select', { class: 'input pick-val', 'aria-label': 'LED colour' }, ...Object.keys(LED_RGB).map(c => el('option', { value: c, selected: pk.color === c }, c)));
+      sel.addEventListener('change', () => { pk.color = sel.value; apply(); });
+      row.append(sel);
+    } else {
+      // type any value (4.7k, 47n, 2.2u) or pick a common one from the list
+      const unit = PARTS[type].unit;
+      const show = (v) => (type === 'Z' ? String(v) : fmtSI(v, '', 4).replace(/\s/g, ''));
+      const listId = 'vals-' + type;
+      if (!document.getElementById(listId)) document.body.append(el('datalist', { id: listId }, ...VALUE_PRESETS[type].map(v => el('option', { value: show(v) }))));
+      const inp = el('input', { class: 'input pick-val mono', value: show(pk.value), list: listId, inputmode: 'text', spellcheck: 'false', 'aria-label': `${PARTS[type].name} value in ${unit}`, title: `Any value, e.g. ${type === 'R' ? '4.7k or 2M2' : type === 'Z' ? '6.8' : '47n or 2.2u'}` });
+      const commit = () => {
+        const v = type === 'Z' ? parseFloat(inp.value) : parseSI(inp.value);
+        if (!(v > 0)) { inp.classList.add('bad'); toast(`Could not read "${inp.value}". Try ${type === 'R' ? '4.7k, 220 or 1M' : type === 'Z' ? '5.1 or 12' : '100n, 4.7u or 1m'}.`, 'bad'); return; }
+        inp.classList.remove('bad');
+        pk.value = v; inp.value = show(v); apply();
+      };
+      inp.addEventListener('change', commit);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); inp.blur(); } });
+      row.append(el('label', { class: 'pick-wrap' }, inp, el('span', { class: 'pick-unit' }, unit)));
+    }
   }
   return row;
 }
@@ -709,7 +735,7 @@ function loadPracticeBoard() {
   myBench.setWindow(exp ? exp.window : 0.01);
   myBench.board.focusIds = new Set();
   if (!myBench.restoreStored()) myBench.load({ parts: [], wires: [], settings: exp ? { ...DEFAULT_SETTINGS(), ...structuredClone(exp.settings) } : DEFAULT_SETTINGS() });
-  myBench.board.fit();
+  if (innerWidth < 760) myBench.board.focusBreadboard(); else myBench.board.fit();
 }
 function leavePractice() {
   mode = 'practice';

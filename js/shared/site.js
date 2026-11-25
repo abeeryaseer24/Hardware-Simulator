@@ -50,7 +50,7 @@ export function mountChrome(active) {
   bar.innerHTML = `
     <a class="bar__brand" href="index.html" aria-label="Benchnote home">${LOGO}<span class="bar__word">Benchnote</span></a>
     <nav class="nav" aria-label="Main">${links}</nav>
-    <div class="bar__tools"><button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle dark theme"></button></div>`;
+    <div class="bar__tools"><button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle dark theme"></button><button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>`;
   document.body.prepend(bar);
 
   // Learn dropdown
@@ -75,6 +75,23 @@ export function mountChrome(active) {
   document.addEventListener('click', close);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   window.addEventListener('resize', close);
+
+  // phone menu: every page in one list
+  const menuBtn = bar.querySelector('#menuBtn');
+  let sheet = null;
+  const closeSheet = () => { sheet?.remove(); sheet = null; menuBtn.setAttribute('aria-expanded', 'false'); };
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (sheet) { closeSheet(); return; }
+    sheet = document.createElement('nav');
+    sheet.className = 'm-sheet';
+    sheet.setAttribute('aria-label', 'All pages');
+    const flat = NAV.flatMap(n => (n.items ? n.items : [n]));
+    sheet.innerHTML = `<a href="index.html"${active === 'home' ? ' aria-current="page"' : ''}>Home</a>` + flat.map(n => `<a href="${n.href}"${n.key === active ? ' aria-current="page"' : ''}>${n.label}${n.note ? `<small>${n.note}</small>` : ''}</a>`).join('');
+    document.body.append(sheet);
+    menuBtn.setAttribute('aria-expanded', 'true');
+  });
+  document.addEventListener('click', (e) => { if (sheet && !sheet.contains(e.target)) closeSheet(); });
 
   const btn = bar.querySelector('#themeBtn');
   const paint = () => {
