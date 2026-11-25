@@ -270,8 +270,29 @@ function drawMaps() {
     root.append(g);
   }
   host.append(root);
+  drawLegend(sol, chosen);
   $('#mapHint').textContent = editable ? 'Click to cycle 0, 1, X. Drag to paint. Groups that wrap round an edge are drawn open at that edge.' : 'This map follows your input above. Switch the input method to "Karnaugh map" to edit cells directly.';
   bindMap(root, editable);
+}
+
+function drawLegend(sol, chosen) {
+  const host = $('#groupLegend');
+  const isSop = st.show === 'sop';
+  if (sol.constant != null || !chosen.length) {
+    host.replaceChildren(el('p', { class: 'hint' }, sol.constant != null ? `F is constant (${isSop ? result.sopText[0] : result.posText[0]}), so there are no loops.` : 'Nothing to group yet.'));
+    return;
+  }
+  const fmt = isSop ? termSOP : termPOS;
+  const text = (isSop ? result.sopText : result.posText)[st.sol[st.show]] || '';
+  host.replaceChildren(
+    el('p', { class: 'gl-head' }, isSop ? 'Each loop of 1s is one product term. OR them together:' : 'Each loop of 0s is one sum term. AND them together:'),
+    el('ul', { class: 'gl-list' }, ...chosen.map((pi, gi) => el('li', {},
+      el('span', { class: 'gl-sw', style: `--c:${GROUP_COLORS[gi % GROUP_COLORS.length]}` }),
+      el('span', { class: 'gl-term', html: exprHTML(fmt(sol.pis[pi], st.names)) }),
+      el('span', { class: 'gl-cov' }, `${isSop ? 'm' : 'M'}(${sol.pis[pi].covers.filter(m => (isSop ? result.ones : result.zeros).includes(m)).join(', ')})`),
+      sol.essential.includes(pi) ? el('span', { class: 'tag tag--ess' }, 'essential') : null))),
+    el('p', { class: 'gl-sum', html: (isSop ? 'SOP' : 'POS') + ': F = ' + exprHTML(text) }),
+  );
 }
 
 function runs(set, size) {

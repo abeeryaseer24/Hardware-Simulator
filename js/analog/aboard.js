@@ -6,6 +6,16 @@ import {
 } from './atrainer.js';
 
 const P = 15;
+const ROW_ORDER = ['tp', 'tn', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'bp', 'bn'];
+function shiftHole(h, dc, dr) {
+  const m = /^(tp|tn|bp|bn|[a-j])(\d+)$/.exec(h);
+  if (!m) return null;
+  const ri = ROW_ORDER.indexOf(m[1]) + dr, col = +m[2] - 1 + dc;
+  if (ri < 0 || ri >= ROW_ORDER.length || col < 0 || col >= COLS) return null;
+  const row = ROW_ORDER[ri];
+  if (RAIL_ROWS.includes(row) && !railHasHole(col)) return null;
+  return holeId(row, col);
+}
 export const AWIRE_COLORS = {
   red: '#d62b2b', black: '#23262a', blue: '#2563c9', green: '#1f9a4c',
   yellow: '#e8b80c', orange: '#ec7a1c', white: '#f1f1ec', purple: '#7d4bc4',
@@ -210,34 +220,63 @@ export class AnalogBoard {
       if (e.button === 2) return;
       const act = e.target.closest?.('[data-act]');
       if (act) { e.preventDefault(); this.hooks.control(act.dataset.act); return; }
-      down = { x: e.clientX, y: e.clientY, vb: { ...this.vb }, moved: false, p: this.toSvg(e) };
+      const p = this.toSvg(e);
+      const pt = this.hitPoint(p.x, p.y);
+      down = { x: e.clientX, y: e.clientY, vb: { ...this.vb }, moved: false, p, pt };
+      if (!this.readonly && this.mode !== 'place') {
+        const onLead = pt && this.t.occupied().get(pt)?.part;
+        const part = this.hitPart(p.x, p.y);
+        if (part && !onLead) { down.part = part; down.orig = part.type === 'OA' ? part.col : part.holes.slice(); down.row0 = this.nearestRow(p.y); }
+      }
       s.setPointerCapture(e.pointerId);
     });
     s.addEventListener('pointermove', (e) => {
       const p = this.toSvg(e);
+      this.cursor = p;
       if (down) {
         const dx = e.clientX - down.x, dy = e.clientY - down.y;
-        if (!down.moved && dx * dx + dy * dy > 25) down.moved = true;
-        if (down.moved && !this.pending && !this.firstHole) {
-          const r = s.getBoundingClientRect(), k = down.vb.w / r.width;
-          this.vb.x = down.vb.x - dx * k; this.vb.y = down.vb.y - dy * k; this.applyView();
+        if (!down.moved && dx * dx + dy * dy > 30) down.moved = true;
+        if (down.moved) {
+          if (this.readonly || (!down.pt && !down.part)) {
+            const r = s.getBoundingClientRect(), k = down.vb.w / r.width;
+            this.vb.x = down.vb.x - dx * k; this.vb.y = down.vb.y - dy * k; this.applyView();
+          } else if (this.mode === 'place') {
+            if (down.pt && !APADS[down.pt] && !['OA', 'NPN', 'PNP'].includes(this.place.type)) this.firstHole = down.pt;
+          } else if (down.part) {
+            this.dragPart(down, p);
+          } else if (down.pt) {
+            this.pending = down.pt;
+          }
         }
       }
-      this.cursor = p;
       this.onHover(p, e.target);
     });
     s.addEventListener('pointerup', (e) => {
       if (!down) return;
       const d = down; down = null;
-      if (d.moved && !this.pending && !this.firstHole) return;
       const p = this.toSvg(e);
       const pt = this.hitPoint(p.x, p.y);
       if (this.readonly) {
-        const part = this.hitPart(p.x, p.y);
-        if (part) this.hooks.select({ kind: 'part', id: part.id });
+        if (!d.moved) { const part = this.hitPart(p.x, p.y); if (part) this.hooks.select({ kind: 'part', id: part.id }); }
         return;
       }
-      if (this.mode === 'place') { this.placeClick(p, pt); return; }
+      if (this.mode === 'place') {
+        if (d.moved && this.firstHole && pt && pt !== this.firstHole) this.placeTwo(this.firstHole, pt);
+        else if (!d.moved || !this.firstHole) this.placeTap(p, pt);
+        this.firstHole = null;
+        this.renderOverlay();
+        return;
+      }
+      if (d.part) {
+        if (d.moved) { if (d.didMove) this.hooks.change(); return; }
+        return this.select({ kind: 'part', id: d.part.id });
+      }
+      if (d.moved) {
+        if (this.pending && pt && pt !== this.pending) this.tryWire(this.pending, pt);
+        this.pending = null;
+        this.renderOverlay();
+        return;
+      }
       const wire = e.target.closest?.('[data-wire]');
       if (this.pending) {
         if (pt && pt !== this.pending) this.tryWire(this.pending, pt);
@@ -245,9 +284,7 @@ export class AnalogBoard {
         this.renderOverlay();
         return;
       }
-      const part = this.hitPart(p.x, p.y);
       if (wire) return this.select({ kind: 'wire', id: wire.dataset.wire });
-      if (part) return this.select({ kind: 'part', id: part.id });
       if (pt) {
         const occ = this.t.occupied().get(pt);
         if (occ?.part) return this.select({ kind: 'part', id: occ.part.id });
@@ -275,7 +312,37 @@ export class AnalogBoard {
     });
   }
 
-  placeClick(p, pt) {
+  nearestRow(y) {
+    let best = 0, bd = 1e9;
+    ROW_ORDER.forEach((r, i) => { const d = Math.abs(ROWS[r] - y); if (d < bd) { bd = d; best = i; } });
+    return best;
+  }
+
+  // move a part by whole holes while it is being dragged
+  dragPart(d, p) {
+    const part = d.part;
+    const dc = Math.round((p.x - d.p.x) / P);
+    const occ = this.t.occupied();
+    const free = (h) => h && !APADS[h] && (!occ.has(h) || occ.get(h).part === part);
+    if (part.type === 'OA') {
+      const col = d.orig + dc;
+      if (col === part.col || col < 0 || col + 4 > COLS) return;
+      if (![1, 2, 3, 4, 5, 6, 7, 8].map(n => opampPin(col, n)).every(free)) return;
+      part.col = col;
+    } else {
+      const dr = this.nearestRow(p.y) - d.row0;
+      const next = d.orig.map(h => shiftHole(h, dc, dr));
+      if (!next.every(free) || next.join() === part.holes.join()) return;
+      if (part.type !== 'NPN' && part.type !== 'PNP' && baseNode(next[0]) === baseNode(next[1])) return;
+      part.holes = next;
+    }
+    d.didMove = true;
+    this.t.dirty = true;
+    this.render();
+  }
+
+  // one tap: the part drops in with a sensible length; drag it afterwards to move it
+  placeTap(p, pt) {
     const pl = this.place;
     const occ = this.t.occupied();
     const free = (h) => h && !APADS[h] && !occ.has(h);
@@ -288,20 +355,48 @@ export class AnalogBoard {
     }
     if (pl.type === 'NPN' || pl.type === 'PNP') {
       const ph = pt && parsePoint(pt);
-      if (!ph || ph.kind !== 'hole' || RAIL_ROWS.includes(ph.row)) { this.hooks.notify('Click a breadboard hole for the middle (base) leg.', 'bad'); return; }
+      if (!ph || ph.kind !== 'hole' || RAIL_ROWS.includes(ph.row)) { this.hooks.notify('Tap a breadboard hole for the middle (base) leg.', 'bad'); return; }
       const holes = [holeId(ph.row, ph.col - 1), pt, holeId(ph.row, ph.col + 1)];
       if (ph.col < 1 || ph.col > COLS - 2 || !holes.every(free)) { this.hooks.notify('The three legs need three free holes side by side.', 'bad'); return; }
       this.addPart({ type: pl.type, holes });
       return;
     }
-    if (!free(pt)) { this.hooks.notify(pt && APADS[pt] ? 'Parts go on the breadboard. Use a wire to reach the instruments.' : 'Pick a free breadboard hole.', 'bad'); return; }
-    if (!this.firstHole) { this.firstHole = pt; this.renderOverlay(); return; }
-    if (pt === this.firstHole) { this.firstHole = null; this.renderOverlay(); return; }
-    if (baseNode(pt) === baseNode(this.firstHole)) { this.hooks.notify('Both leads would sit in the same strip, which shorts the part out. Use a different column.', 'bad'); return; }
-    const a = pointXY(this.firstHole), b = pointXY(pt);
-    if (Math.hypot(a.x - b.x, a.y - b.y) > 15 * 14) { this.hooks.notify('Leads that far apart would not reach. Keep parts within about 14 holes.', 'bad'); return; }
-    this.addPart({ type: pl.type, holes: [this.firstHole, pt], value: pl.value, color: pl.color });
-    this.firstHole = null;
+    if (!free(pt)) { this.hooks.notify(pt && APADS[pt] ? 'Parts go on the breadboard. Drag a wire to reach the instruments.' : 'Tap a free breadboard hole.', 'bad'); return; }
+    const ph = parsePoint(pt);
+    const cands = [];
+    if (ph.row === 'tp' || ph.row === 'tn') cands.push(holeId(ph.row === 'tp' ? 'b' : 'a', ph.col));
+    else if (ph.row === 'bp' || ph.row === 'bn') cands.push(holeId(ph.row === 'bp' ? 'j' : 'i', ph.col));
+    else for (const dc of [4, -4, 3, -3, 5, -5, 2, -2, 6, -6]) if (ph.col + dc >= 0 && ph.col + dc < COLS) cands.push(holeId(ph.row, ph.col + dc));
+    const other = cands.find(h => free(h) && baseNode(h) !== baseNode(pt));
+    if (!other) { this.hooks.notify('No room next to that hole. Try another spot, or drag from one hole to another to set the length.', 'bad'); return; }
+    this.addPart({ type: pl.type, holes: [pt, other], value: pl.value, color: pl.color });
+  }
+
+  placeTwo(a, b) {
+    const pl = this.place;
+    const occ = this.t.occupied();
+    if ([a, b].some(h => APADS[h] || occ.has(h))) { this.hooks.notify('Both ends need free breadboard holes.', 'bad'); return; }
+    if (baseNode(a) === baseNode(b)) { this.hooks.notify('Both leads would sit in the same strip, which shorts the part out.', 'bad'); return; }
+    const A = pointXY(a), B = pointXY(b);
+    if (Math.hypot(A.x - B.x, A.y - B.y) > 15 * 14) { this.hooks.notify('Leads that far apart would not reach. Keep parts within about 14 holes.', 'bad'); return; }
+    this.addPart({ type: pl.type, holes: [a, b], value: pl.value, color: pl.color });
+  }
+
+  // an occupied hole stands for its whole strip: use the nearest free hole in it
+  freeInStrip(h) {
+    if (APADS[h]) return h;
+    const occ = this.t.occupied();
+    if (!occ.has(h)) return h;
+    const p = parsePoint(h);
+    const cands = [];
+    if (RAIL_ROWS.includes(p.row)) {
+      for (let d = 1; d < COLS; d++) for (const c of [p.col - d, p.col + d]) if (c >= 0 && c < COLS && railHasHole(c)) cands.push(holeId(p.row, c));
+    } else {
+      const rows = TOP_ROWS.includes(p.row) ? TOP_ROWS : BOT_ROWS;
+      const i = rows.indexOf(p.row);
+      rows.map((r, k) => [r, Math.abs(k - i)]).sort((x, y) => x[1] - y[1]).forEach(([r]) => cands.push(holeId(r, p.col)));
+    }
+    return cands.find(c => !occ.has(c)) || null;
   }
 
   addPart(spec) {
@@ -311,12 +406,9 @@ export class AnalogBoard {
   }
 
   tryWire(a, b) {
-    const occ = this.t.occupied();
-    for (const h of [a, b]) {
-      if (APADS[h]) continue;
-      const o = occ.get(h);
-      if (o) { this.hooks.notify(o.part ? `That hole holds a lead of ${o.part.ref}. Use another hole in the same strip.` : 'That hole already has a wire in it.', 'bad'); return; }
-    }
+    const fa = this.freeInStrip(a), fb = this.freeInStrip(b);
+    if (!fa || !fb) { this.hooks.notify('That strip is full. Use a hole in another strip.', 'bad'); return; }
+    a = fa; b = fb;
     if (baseNode(a) === baseNode(b)) { this.hooks.notify('Those two points are already connected through the strip.'); return; }
     let color = this.wireColor;
     if (color === 'auto') color = this.autoColor(a, b);

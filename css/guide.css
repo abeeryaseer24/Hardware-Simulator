@@ -167,3 +167,14 @@
   .rev { columns: 2; column-gap: 12px; }
   .rev-card { box-shadow: none; border-color: #999; padding: 8px 10px; margin-bottom: 8px; }
 }
+
+/* common resistor values */
+.cc-wrap { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.cc-table td { padding: 6px 10px; vertical-align: middle; }
+.cc-row { cursor: pointer; }
+.cc-row:hover td { background: var(--surface-2); }
+.cc-val { font-family: var(--f-mono); font-weight: 600; white-space: nowrap; }
+.cc-bands { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 6px; background: #dcc493; }
+.cc-bands i { display: block; width: 7px; height: 18px; border-radius: 1px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .18); }
+.cc-bands i:last-child { margin-left: 6px; }
+.cc-names { color: var(--ink-2); font-size: .84rem; }

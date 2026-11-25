@@ -350,7 +350,7 @@ function renderParts() {
   }
   items.push(el('div', { class: 'keys', style: 'margin-top:16px' }, el('p', { class: 'parts-group' }, 'How to build'),
     el('dl', {},
-      el('dt', {}, 'Wire'), el('dd', {}, 'click a hole, then another hole'),
+      el('dt', {}, 'Wire'), el('dd', {}, 'drag from any hole, chip pin or terminal to another'),
       el('dt', {}, 'Remove'), el('dd', {}, 'right-click a wire or chip, or select and press Del'),
       el('dt', {}, 'Move chip'), el('dd', {}, 'drag it sideways'),
       el('dt', {}, el('kbd', {}, '1'), '–', el('kbd', {}, '8')), el('dd', {}, 'flip switches'),

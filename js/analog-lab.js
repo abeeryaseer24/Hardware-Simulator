@@ -395,10 +395,11 @@ function renderParts() {
   }
   items.push(sw);
   items.push(el('div', { class: 'keys', style: 'margin-top:16px' }, el('p', { class: 'parts-group' }, 'How to build'), el('dl', {},
-    el('dt', {}, 'Two-lead part'), el('dd', {}, 'pick it, click the first hole, then the second'),
+    el('dt', {}, 'Place a part'), el('dd', {}, 'pick it, then tap a hole. Drag from hole to hole to choose the length'),
+    el('dt', {}, 'Move a part'), el('dd', {}, 'drag its body to new holes'),
     el('dt', {}, 'Transistor'), el('dd', {}, 'click the hole for the middle (base) leg'),
     el('dt', {}, '741'), el('dd', {}, 'click where it should straddle the channel'),
-    el('dt', {}, 'Wire'), el('dd', {}, 'click a hole or terminal, then another'),
+    el('dt', {}, 'Wire'), el('dd', {}, 'drag from any hole, lead or terminal to another'),
     el('dt', {}, 'Remove'), el('dd', {}, 'right-click, or select and press Del'))));
   host.replaceChildren(...items);
 }
@@ -413,7 +414,7 @@ function partButton(type, value, color, label, withValue) {
       if (!on) { myBench.board.setPlace(null); return; }
       ev.currentTarget.setAttribute('aria-pressed', 'true');
       myBench.board.setPlace({ type, value: value ?? pk.value, color: color ?? pk.color });
-      $('#myStatus').textContent = type === 'OA' ? 'Click the breadboard where the 741 should straddle the channel.' : type === 'NPN' || type === 'PNP' ? 'Click the hole for the base (middle) leg.' : 'Click the first hole, then the second. Esc cancels.';
+      $('#myStatus').textContent = type === 'OA' ? 'Tap where the 741 should straddle the channel.' : type === 'NPN' || type === 'PNP' ? 'Tap the hole for the base (middle) leg.' : 'Tap a hole to drop it in, or drag from one hole to another. Esc stops placing.';
     },
   }, el('span', { class: 'ico', html: `<svg viewBox="0 0 48 22">${ICONS[type]}</svg>` }), el('span', { class: 'nm' }, label));
   row.append(btn);

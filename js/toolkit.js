@@ -97,6 +97,27 @@ function nearestE12(v, up = true) {
     render();
   });
   render();
+
+  // common lab values, 4-band with gold (±5 %) tolerance
+  const COMMON = [10, 22, 47, 100, 220, 330, 470, 680, 1000, 1500, 2200, 3300, 4700, 6800, 10000, 22000, 47000, 100000, 220000, 470000, 1e6];
+  const bandsOf = (v) => {
+    const e = Math.floor(Math.log10(v)) - 1;
+    const sig = Math.round(v / 10 ** e);
+    return [COLORS[Math.floor(sig / 10)], COLORS[sig % 10], COLORS.find(x => x[3] === 10 ** e), COLORS[10]];
+  };
+  const fmtR = (v) => (v >= 1e6 ? v / 1e6 + ' MΩ' : v >= 1e3 ? v / 1e3 + ' kΩ' : v + ' Ω');
+  const rows = COMMON.map(v => {
+    const b = bandsOf(v);
+    return el('tr', { class: 'cc-row', title: 'Show this in the calculator', onclick: () => { rev.input.value = String(v); rev.input.dispatchEvent(new Event('input')); c.scrollIntoView({ behavior: 'smooth', block: 'start' }); } },
+      el('td', { class: 'cc-val' }, fmtR(v)),
+      el('td', {}, el('span', { class: 'cc-bands' }, ...b.map(x => el('i', { style: `background:${x[1]}`, title: x[0] })))),
+      el('td', { class: 'cc-names' }, b.map(x => x[0]).join(', ')));
+  });
+  c.append(el('h3', {}, 'Common values'),
+    el('p', { class: 'hint' }, 'The resistors you meet most in lab kits, as 4-band codes with a gold (±5 %) band. Click a row to load it into the calculator.'),
+    el('div', { class: 'cc-wrap' }, el('table', { class: 'table cc-table' },
+      el('thead', {}, el('tr', {}, el('th', {}, 'Value'), el('th', {}, 'Bands'), el('th', {}, 'Colours (1st, 2nd, multiplier, tolerance)'))),
+      el('tbody', {}, ...rows))));
 })();
 
 // ---------------------------------------------------------------- bases & codes

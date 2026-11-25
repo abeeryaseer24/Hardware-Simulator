@@ -145,3 +145,13 @@
 .c-inv { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1.5; }
 .c-lit { fill: var(--ink); font: 600 15px var(--f-mono); }
 .c-out { fill: var(--ink); font: 700 20px var(--f-body); }
+
+/* loop colour legend */
+.group-legend { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface-2); }
+.gl-head { font-size: .82rem; color: var(--muted); margin: 0 0 8px; }
+.gl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gl-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gl-sw { width: 22px; height: 14px; border-radius: 5px; border: 2.5px solid var(--c); background: color-mix(in srgb, var(--c) 18%, transparent); flex: none; }
+.gl-term { font-family: var(--f-mono); font-weight: 600; font-size: .95rem; }
+.gl-cov { font-family: var(--f-mono); font-size: .74rem; color: var(--muted); }
+.gl-sum { margin: 10px 0 0; padding-top: 8px; border-top: 1px dashed var(--rule-strong); font-family: var(--f-mono); font-size: .9rem; font-weight: 600; }

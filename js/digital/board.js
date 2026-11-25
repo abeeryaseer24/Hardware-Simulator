@@ -286,7 +286,7 @@ export class Board {
     for (const c of this.t.chips) {
       const span = chipSpan(c.type);
       const x0 = colX(c.col) - 7, x1 = colX(c.col + span - 1) + 7;
-      if (x >= x0 && x <= x1 && y >= ROWS.e - 4 && y <= ROWS.f + 4) return c;
+      if (x >= x0 && x <= x1 && y >= ROWS.e + 5 && y <= ROWS.f - 5) return c;
     }
     return null;
   }
@@ -316,7 +316,7 @@ export class Board {
       if (this.readonly) { s.setPointerCapture(e.pointerId); return; }
       const chip = this.mode === 'wire' ? this.hitChip(p.x, p.y) : null;
       const pt = this.hitPoint(p.x, p.y);
-      if (chip && !this.pending && !(pt && !parsePoint(pt)?.row?.match(/^[ef]$/))) {
+      if (chip && !this.pending) {
         down.chip = chip; down.chipCol = chip.col;
       } else if (pt && this.mode === 'wire') {
         down.pt = pt;
@@ -449,13 +449,27 @@ export class Board {
   }
 
   // ------------------------------------------------------------------ edits
-  tryWire(a, b) {
+  // an occupied hole stands for its whole strip: use the nearest free hole in it
+  freeInStrip(h) {
+    if (PADS[h]) return h;
     const occ = this.t.occupied();
-    for (const pt of [a, b]) {
-      if (PADS[pt]) continue;
-      const o = occ.get(pt);
-      if (o) { this.hooks.notify(o.chip ? `That hole is under ${o.chip.ref}'s pin ${o.pin}. Use another hole in the same column.` : 'That hole already has a wire. Breadboard holes take one lead each.', 'bad'); return; }
+    if (!occ.has(h)) return h;
+    const p = parsePoint(h);
+    const cands = [];
+    if (RAIL_ROWS.includes(p.row)) {
+      for (let d = 1; d < COLS; d++) for (const c of [p.col - d, p.col + d]) if (c >= 0 && c < COLS && railHasHole(c)) cands.push(holeId(p.row, c));
+    } else {
+      const rows = TOP_ROWS.includes(p.row) ? TOP_ROWS : BOT_ROWS;
+      const i = rows.indexOf(p.row);
+      rows.map((r, k) => [r, Math.abs(k - i)]).sort((x, y) => x[1] - y[1]).forEach(([r]) => cands.push(holeId(r, p.col)));
     }
+    return cands.find(c => !occ.has(c)) || null;
+  }
+
+  tryWire(a, b) {
+    const fa = this.freeInStrip(a), fb = this.freeInStrip(b);
+    if (!fa || !fb) { this.hooks.notify('That strip is full. Use a hole in another column.', 'bad'); return; }
+    a = fa; b = fb;
     if (baseNode(a) === baseNode(b)) { this.hooks.notify('Both ends are already connected through the breadboard strip, so that wire would do nothing.'); return; }
     let color = this.wireColor;
     if (color === 'auto') color = this.autoColor(a, b);

@@ -131,10 +131,10 @@ body.lab-page { overflow: hidden; }
 /* ---------- stages ---------- */
 .stages { display: grid; min-width: 0; min-height: 0; background: var(--stage); }
 .stages.split { grid-template-rows: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 2px; background: #050d0a; }
-.stages.split.ref-hidden { grid-template-rows: 0 minmax(0, 1fr); }
+.stages.split.ref-hidden { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1900px) {
   .stages.split { grid-template-rows: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
-  .stages.split.ref-hidden { grid-template-columns: 0 minmax(0, 1fr); }
+  .stages.split.ref-hidden { grid-template-columns: minmax(0, 1fr); }
 }
 .stages.split.ref-hidden .pane-ref { display: none; }
 .pane { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--stage); }
@@ -274,7 +274,7 @@ body.lab-page { overflow: hidden; }
   .lab-view.is-bench { grid-template-columns: 1fr; grid-template-rows: minmax(420px, 1fr) auto; overflow: auto; }
   .lab-panel { border-left: 0; border-top: 1px solid var(--rule); max-height: 60vh; }
   .stages.split { grid-template-columns: 1fr; grid-template-rows: minmax(240px, 36vh) minmax(320px, 1fr); }
-  .stages.split.ref-hidden { grid-template-rows: 0 minmax(380px, 1fr); }
+  .stages.split.ref-hidden { grid-template-rows: minmax(420px, 1fr); }
   .pane-label { flex-wrap: wrap; }
 }
 @media (max-width: 760px) {
