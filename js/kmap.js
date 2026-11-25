@@ -265,8 +265,13 @@ function drawMaps() {
     cp.append(svg('rect', { x: pad.l - 1, y: pad.t - 1, width: C * CELL + 2, height: R * CELL + 2 }));
     g.append(cp);
     const gl = svg('g', { 'clip-path': `url(#kc${s})` });
-    chosen.forEach((pi, gi) => drawGroup(gl, sol.pis[pi], gi, s, L, R, C, pad));
-    g.append(gl);
+    const tags = svg('g', { class: 'km-tags' });
+    const fmt = st.show === 'sop' ? termSOP : termPOS;
+    chosen.forEach((pi, gi) => {
+      const box = drawGroup(gl, sol.pis[pi], gi, s, L, R, C, pad);
+      if (box) tags.append(loopTag(box, fmt(sol.pis[pi], st.names), GROUP_COLORS[gi % GROUP_COLORS.length], pad, R, C));
+    });
+    g.append(gl, tags);
     root.append(g);
   }
   host.append(root);
@@ -312,13 +317,36 @@ function drawGroup(layer, pi, gi, s, L, R, C, pad) {
   if (!rows.size) return;
   const color = GROUP_COLORS[gi % GROUP_COLORS.length];
   const inset = 5 + (gi % 4) * 3.5;
+  let best = null;
   for (const rr of runs(rows, R)) for (const cr of runs(cols, C)) {
     let x = pad.l + cr.from * CELL + inset, y = pad.t + rr.from * CELL + inset;
     let w = (cr.to - cr.from + 1) * CELL - inset * 2, h = (rr.to - rr.from + 1) * CELL - inset * 2;
     if (cr.openStart) { x -= 30; w += 30; } if (cr.openEnd) w += 30;
     if (rr.openStart) { y -= 30; h += 30; } if (rr.openEnd) h += 30;
     layer.append(svg('rect', { x, y, width: w, height: h, rx: 16, class: 'km-loop', stroke: color, fill: color }));
+    if (!best || (!cr.openStart && !rr.openEnd && (best.open || w * h > best.w * best.h))) best = { x, y, w, h, open: cr.openStart || rr.openEnd };
   }
+  return best;
+}
+
+// a coloured label sitting on the loop, showing the term that loop stands for
+function loopTag(box, term, color, pad, R, C) {
+  const g = svg('g', { class: 'km-tag' });
+  const t = svg('text', { class: 'km-tag-t' });
+  const chars = [...term];
+  for (let i = 0; i < chars.length; i++) {
+    if (chars[i] === '′') continue;
+    const ts = svg('tspan', chars[i + 1] === '′' ? { 'text-decoration': 'overline' } : {});
+    ts.textContent = chars[i];
+    t.append(ts);
+  }
+  const wpx = term.replace(/′/g, '').length * 8.2 + 12;
+  const x0 = Math.max(pad.l + 2, Math.min(box.x + 4, pad.l + C * CELL - wpx - 2));
+  const y0 = Math.max(pad.t + 2, Math.min(box.y + box.h - 22, pad.t + R * CELL - 20));
+  g.append(svg('rect', { x: x0, y: y0, width: wpx, height: 18, rx: 5, fill: color, class: 'km-tag-bg' }));
+  t.setAttribute('x', x0 + 6); t.setAttribute('y', y0 + 13);
+  g.append(t);
+  return g;
 }
 let painting = null;
 function bindMap(root, editable) {
