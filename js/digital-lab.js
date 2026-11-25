@@ -6,6 +6,9 @@ import { WIRE_COLORS } from './digital/board.js';
 import { DigitalBench, benchToolbar } from './digital/bench.js';
 import { EXPERIMENTS } from './digital/experiments.js';
 import { pinoutSVG, pinRoles } from './digital/pinout.js';
+import { solveFunction, truthFromExpr, parseIndexList, termSOP, termPOS } from './shared/boolean.js';
+import { buildLogic } from './digital/autobuild.js';
+import { diagnose, autoFix, describeNode } from './digital/autofix.js';
 
 mountChrome('digital');
 bindSideToggle();
@@ -105,6 +108,7 @@ function open(e, wantView) {
   $('#tabs').hidden = false;
   $('[data-mt="task"]').hidden = true;
   $('[data-mt="check"]').hidden = false;
+  $('[data-mt="logic"]').hidden = false;
   stopStepPlay();
   drawSide();
   $('#side').classList.remove('is-open');
@@ -139,6 +143,7 @@ function open(e, wantView) {
   $('#tabs [data-view="fault"]').hidden = !e;
   loadPracticeBoard();
   renderParts();
+  renderLogicPanel();
   renderPracticeSteps();
   renderCheckPanel();
   $('#myInspect').replaceChildren(el('p', { class: 'empty' }, 'Click a chip or wire on your board to inspect it.'));
@@ -325,6 +330,17 @@ function renderParts() {
   const host = $('#myParts');
   const need = exp ? [...new Set(exp.build().chips.map(c => c.type))] : [];
   const items = [];
+  // one-tap strip for the chips used in almost every lab
+  const quick = el('div', { class: 'quick' }, ...['7400', '7402', '7404', '7408', '7432', '7486', '7474'].map(id => el('button', {
+    class: 'qp', 'aria-pressed': 'false', title: CHIPS[id].name,
+    onclick: (ev) => {
+      const on = ev.currentTarget.getAttribute('aria-pressed') !== 'true';
+      $$('.qp, .part-row').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      if (on) { ev.currentTarget.setAttribute('aria-pressed', 'true'); myBench.board.setMode('place', id); $('#myStatus').textContent = `Placing ${id}: click the breadboard. Esc cancels.`; }
+      else myBench.board.setMode('wire');
+    },
+  }, id)));
+  items.push(el('p', { class: 'parts-group' }, 'Common chips'), quick);
   const row = (c) => el('button', {
     class: 'part-row', 'aria-pressed': 'false', title: c.name,
     onclick: (ev) => {
@@ -418,7 +434,7 @@ function renderCheckPanel() {
     exp ? el('div', {},
       el('h3', {}, 'Test your circuit'),
       el('p', { class: 'hint' }, exp.fn ? 'Runs every input combination on your board and compares the outputs with the truth table.' : 'Power-cycles your board and runs the expected clock sequence.'),
-      el('button', { class: 'btn btn--primary', onclick: runCheck }, 'Check my circuit'),
+      el('button', { class: 'btn btn--primary', onclick: () => runCheck() }, 'Check my circuit'),
       el('div', { id: 'checkOut' }),
     ) : null,
     el('p', { class: 'panel-label' }, 'What the trainer noticed'),
@@ -483,6 +499,7 @@ function runCheck(outEl = $('#checkOut'), { mark = true } = {}) {
     el('div', { class: 'verdict ' + (pass ? 'pass' : 'fail') },
       el('strong', {}, pass ? 'Your circuit works' : `${bad} of ${rows.length} ${e.fn ? 'rows' : 'steps'} are wrong`),
       el('span', {}, pass ? 'Marked as done in the experiment list.' : first ? 'Start here: ' + first.text : 'Red cells show what your board did versus what it should do. Z means nothing drives that output.')),
+    !pass && mode === 'practice' ? fixPanel(e, outEl) : null,
     el('div', { class: 'tt-wrap' }, el('table', { class: 'table tt' }, el('thead', {}, head), el('tbody', {}, ...body))),
   );
   return pass;
@@ -566,6 +583,7 @@ function loadPracticeBoard() {
 }
 function leavePractice() {
   mode = 'practice';
+  $('[data-mt="logic"]').hidden = false;
   $('[data-mt="task"]').hidden = true;
   $('[data-mt="steps"]').hidden = !exp;
   $('[data-mt="check"]').hidden = false;
@@ -632,6 +650,7 @@ function makeFault(e) {
 }
 function enterFault() {
   mode = 'fault';
+  $('[data-mt="logic"]').hidden = true;
   myBench.storeKey = null;
   $('#split').classList.add('ref-hidden');
   $('#showRef').hidden = false;
@@ -679,6 +698,7 @@ function openExam() {
   open(e, 'practice');
   mode = 'exam';
   $('#tabs').hidden = true;
+  $('[data-mt="logic"]').hidden = true;
   $('#crumbGroup').textContent = 'Lab exam practice';
   $('#title').textContent = 'Lab exam practice';
   $('#aim').textContent = 'A random experiment, an empty board and a clock. Build it without the reference, then submit.';
@@ -745,6 +765,116 @@ function renderExamPanel(e) {
   );
 }
 $('#examBtn').addEventListener('click', openExam);
+
+// ------------------------------------------------------------------ auto-correct
+function fixPanel(e, outEl) {
+  const list = el('div');
+  const show = () => {
+    const t = myBench.trainer, d = diagnose(e.build(), t);
+    const items = [
+      ...d.missingChips.map(c => `Add a ${c.type} (${CHIPS[c.type].name}). The reference has it with pin 1 at hole f${c.col + 1}.`),
+      ...d.wrong.map(w => `Remove the wire ${describePoint(w.a)} → ${describePoint(w.b)}. It connects points that should not be joined.`),
+      ...d.missing.map(m => `Add a wire: ${describeNode(m.a, t)} → ${describeNode(m.b, t)}${m.note ? ` (${m.note})` : ''}.`),
+    ];
+    const ids = new Set(d.wrong.map(w => w.id));
+    myBench.board.focusWire = d.wrong[0]?.id || null;
+    myBench.board.render();
+    list.replaceChildren(items.length
+      ? el('ol', { class: 'fix-list' }, ...items.map(t => el('li', {}, t)))
+      : el('p', { class: 'hint' }, 'The wiring matches the reference. Check chip orientation, the power switch and the switch settings.'));
+    void ids;
+  };
+  return el('div', { class: 'fix-box' },
+    el('p', { class: 'fix-head' }, 'Stuck? The trainer can compare your wiring with the reference.'),
+    el('div', { class: 'mode-actions', style: 'margin:6px 0' },
+      el('button', { class: 'btn btn--sm', onclick: show }, 'Show what is wrong'),
+      el('button', { class: 'btn btn--sm btn--primary', onclick: () => {
+        const n = autoFix(e.build(), myBench.trainer, (a, b) => myBench.board.autoColor(a, b));
+        myBench.board.focusWire = null;
+        myBench.refresh(); myBench.snapshot();
+        toast(n ? `Made ${n} change${n > 1 ? 's' : ''}. Ctrl+Z undoes them.` : 'Nothing to fix in the wiring.', n ? 'ok' : '');
+        runCheck(outEl);
+      } }, 'Fix it for me')),
+    list);
+}
+
+// ------------------------------------------------------------------ logic helper (expression → K-map → wired board)
+const logic = { n: 3, text: '' };
+const olbHTML = (t) => t.replace(/([A-Z])′/g, '<span class="olb">$1</span>');
+function solveLogic() {
+  const names = 'ABCD'.slice(0, logic.n).split('');
+  const t = logic.text.trim();
+  if (!t) return { names, empty: true };
+  let ones = [], dcs = [];
+  if (/^[\dΣmM(),\s+d]+$/.test(t) && /\d/.test(t)) ({ list: ones, dcs } = parseIndexList(t, 1 << logic.n));
+  else {
+    const used = [...new Set(t.toUpperCase().match(/[A-Z]/g) || [])];
+    const extra = used.filter(v => !names.includes(v));
+    if (extra.length) throw new Error(`Use the variables ${names.join(', ')} (or pick more variables). ${extra.join(', ')} is not one of them.`);
+    ones = truthFromExpr(t, names).values.map((v, i) => (v ? i : -1)).filter(i => i >= 0);
+  }
+  return { names, ones, dcs, sol: solveFunction(logic.n, ones, dcs, names) };
+}
+function renderLogicPanel() {
+  const host = $('#myLogic');
+  if (!host) return;
+  const input = el('input', { class: 'input mono', value: logic.text, spellcheck: 'false', placeholder: "A'B + BC   or   1, 3, 5, 7  d(2)", 'aria-label': 'Expression or minterms' });
+  const out = el('div', { class: 'lg-out' });
+  const seg = el('div', { class: 'seg' }, ...[2, 3, 4].map(k => el('button', { 'aria-pressed': String(logic.n === k), onclick: (e) => { logic.n = k; [...seg.children].forEach(b => b.setAttribute('aria-pressed', String(b === e.currentTarget))); update(); renderKeys(); } }, `${k} inputs`)));
+  const keys = el('div', { class: 'lg-keys' });
+  const ins = (v) => { const a = input.selectionStart ?? input.value.length; input.value = input.value.slice(0, a) + v + input.value.slice(input.selectionEnd ?? a); input.focus(); input.setSelectionRange(a + v.length, a + v.length); logic.text = input.value; update(); };
+  function renderKeys() {
+    keys.replaceChildren(...'ABCD'.slice(0, logic.n).split('').map(v => el('button', { class: 'kp var', type: 'button', onclick: () => ins(v) }, v)),
+      ...[["'", "'"], ['+', ' + '], ['(', '('], [')', ')']].map(([l, v]) => el('button', { class: 'kp', type: 'button', onclick: () => ins(v) }, l)),
+      el('button', { class: 'kp kp--muted', type: 'button', onclick: () => { input.value = input.value.slice(0, -1); logic.text = input.value; update(); } }, '⌫'));
+  }
+  function update() {
+    let r;
+    try { r = solveLogic(); } catch (e) { out.replaceChildren(el('p', { class: 'expr-msg err' }, e.message)); return; }
+    if (r.empty) { out.replaceChildren(el('p', { class: 'hint' }, 'Type a Boolean expression or a list of minterms. The minimal form appears here, and one click wires it on your board.')); return; }
+    const { names, ones, dcs, sol } = r;
+    // compact K-map
+    const G = [0, 1, 3, 2];
+    const rb = logic.n >= 3 ? (logic.n === 4 ? 2 : 1) : 1, cb = logic.n - rb;
+    const rowsG = rb === 1 ? [0, 1] : G, colsG = cb === 1 ? [0, 1] : G;
+    const bits = (v, k) => v.toString(2).padStart(k, '0');
+    const kmap = el('table', { class: 'lg-kmap' },
+      el('thead', {}, el('tr', {}, el('th', {}, names.slice(0, rb).join('') + '\\' + names.slice(rb).join('')), ...colsG.map(c => el('th', {}, bits(c, cb))))),
+      el('tbody', {}, ...rowsG.map(rw => el('tr', {}, el('th', {}, bits(rw, rb)), ...colsG.map(c => { const m = (rw << cb) | c; const v = ones.includes(m) ? '1' : dcs.includes(m) ? 'X' : '0'; return el('td', { class: 'v' + v }, v); })))));
+    const terms = (sol.sop.solutions[0] || []).map(i => { const p = sol.sop.pis[i]; const t = []; for (let k = 0; k < logic.n; k++) { const bit = 1 << (logic.n - 1 - k); if (!(p.mask & bit)) t.push({ v: k, neg: !(p.value & bit) }); } return t; });
+    const build = (style) => {
+      const res = buildLogic({ terms, n: logic.n, constant: sol.sop.constant, style });
+      if (res.error) { toast(res.error, 'bad'); return; }
+      const t = myBench.trainer;
+      if ((t.chips.length || t.wires.length) && !confirm('Replace what is on your board with this circuit? Ctrl+Z brings your board back.')) return;
+      myBench.load({ chips: res.chips.map((c, i) => ({ ...c, ref: 'U' + (i + 1) })), wires: res.wires.map(w => ({ a: w.a, b: w.b, color: 'blue' })), segMode: t.segMode }, { fresh: false });
+      colourWires(myBench);
+      myBench.snapshot();
+      myBench.board.fit();
+      toast(`Wired with ${res.chips.length} chip${res.chips.length > 1 ? 's' : ''}. Flip ${names.map((v, i) => 'S' + (i + 1)).join(', ')} and watch L1.`, 'ok');
+    };
+    out.replaceChildren(
+      el('div', { class: 'lg-res' },
+        el('p', {}, el('span', { class: 'lg-k' }, 'SOP'), el('span', { class: 'lg-e', html: 'F = ' + olbHTML(sol.sopText[0] ?? '0') })),
+        el('p', {}, el('span', { class: 'lg-k' }, 'POS'), el('span', { class: 'lg-e', html: 'F = ' + olbHTML(sol.posText[0] ?? '1') })),
+        el('p', { class: 'hint' }, `Σm(${ones.join(', ') || '—'})${dcs.length ? ` + d(${dcs.join(', ')})` : ''}`)),
+      kmap,
+      el('p', { class: 'panel-label' }, 'Put it on the breadboard'),
+      el('p', { class: 'hint' }, `Inputs ${names.map((v, i) => `${v} = S${i + 1}`).join(', ')}; output F = L1.`),
+      el('div', { class: 'mode-actions' },
+        el('button', { class: 'btn btn--primary btn--sm', onclick: () => build('andor') }, 'Wire it (AND–OR)'),
+        el('button', { class: 'btn btn--sm', onclick: () => build('nand') }, 'Wire it (NAND only)')),
+      el('a', { class: 'lg-link', href: `kmap.html#n=${logic.n}&v=${names.join('')}&m=${ones.join('.')}&d=${dcs.join('.')}` }, 'Open in the full K-map solver (groups and working)'),
+    );
+  }
+  input.addEventListener('input', () => { logic.text = input.value; update(); });
+  renderKeys();
+  host.replaceChildren(
+    el('h3', {}, 'Logic helper'),
+    el('p', { class: 'hint' }, 'Simplify a function and wire it, without leaving the board.'),
+    seg, el('div', { style: 'height:10px' }), input, keys, out);
+  update();
+}
 
 // ------------------------------------------------------------------ boot
 (function boot() {

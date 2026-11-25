@@ -56,7 +56,8 @@ function builder() {
   return api;
 }
 
-const make = (fn) => { const b = builder(); b.rails(); fn(b); return { chips: b.chips, wires: b.wires }; };
+export { builder };
+export const make = (fn) => { const b = builder(); b.rails(); fn(b); return { chips: b.chips, wires: b.wires }; };
 
 const bits = (n, k) => Array.from({ length: k }, (_, i) => (n >> i) & 1);
 

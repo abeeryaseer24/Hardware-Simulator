@@ -444,6 +444,23 @@ const picks = {};
 function renderParts() {
   const host = $('#myParts');
   const items = [el('div', { id: 'myInspectBox' })];
+  const QUICK = [
+    ['330 Ω', { type: 'R', value: 330 }], ['1 kΩ', { type: 'R', value: 1000 }], ['10 kΩ', { type: 'R', value: 10000 }],
+    ['100 nF', { type: 'C', value: 100e-9 }], ['10 µF', { type: 'CE', value: 10e-6 }], ['LED', { type: 'LED', color: 'red' }],
+    ['1N4007', { type: 'D' }], ['BC547', { type: 'NPN' }], ['741', { type: 'OA' }],
+    ...(WORKBENCH ? [['555', { type: 'NE555' }], ['7400', { type: 'IC', chip: '7400' }], ['7404', { type: 'IC', chip: '7404' }], ['7408', { type: 'IC', chip: '7408' }], ['7432', { type: 'IC', chip: '7432' }]] : []),
+  ];
+  items.push(el('p', { class: 'parts-group' }, 'Common parts'), el('div', { class: 'quick' }, ...QUICK.map(([label, spec]) => el('button', {
+    class: 'qp', 'aria-pressed': 'false',
+    onclick: (ev) => {
+      const on = ev.currentTarget.getAttribute('aria-pressed') !== 'true';
+      $$('.qp, .part-row').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      if (!on) { myBench.board.setPlace(null); return; }
+      ev.currentTarget.setAttribute('aria-pressed', 'true');
+      myBench.board.setPlace({ value: PARTS[spec.type].def, color: 'red', ...spec });
+      $('#myStatus').textContent = isDip(spec.type) ? 'Tap where the chip should straddle the channel.' : THREE.includes(spec.type) ? `Tap the hole for the middle leg (${LEG_NAMES[spec.type][1]}).` : 'Tap a hole to drop it in, or drag from one hole to another. Esc stops placing.';
+    },
+  }, label))));
   if (exp) {
     items.push(el('p', { class: 'parts-group' }, 'Needed for this experiment'));
     const seen = new Set();
@@ -501,7 +518,7 @@ function partButton(type, value, color, label, withValue, chip) {
     class: 'part-row', 'aria-pressed': 'false',
     onclick: (ev) => {
       const on = ev.currentTarget.getAttribute('aria-pressed') !== 'true';
-      $$('.part-row').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      $$('.qp, .part-row').forEach(b => b.setAttribute('aria-pressed', 'false'));
       if (!on) { myBench.board.setPlace(null); return; }
       ev.currentTarget.setAttribute('aria-pressed', 'true');
       myBench.board.setPlace({ type, chip, value: value ?? pk.value, color: color ?? pk.color });
@@ -622,7 +639,7 @@ function renderCheckPanel() {
   $('#myCheck').replaceChildren(
     exp ? el('div', {}, el('h3', {}, 'Test your circuit'),
       el('p', { class: 'hint' }, 'Runs your board and the reference side by side with the experiment\'s instrument settings, then compares the voltage across and current through every part.'),
-      el('button', { class: 'btn btn--primary', onclick: runCheck }, 'Check my circuit'),
+      el('button', { class: 'btn btn--primary', onclick: () => runCheck() }, 'Check my circuit'),
       el('div', { id: 'checkOut' })) : null,
     el('p', { class: 'panel-label' }, 'What the trainer noticed'),
     el('div', { id: 'issueBox' }));
