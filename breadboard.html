@@ -3,20 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Breadboard 101 · Benchnote</title>
+  <title>Breadboard basics · Benchnote</title>
   <meta name="description" content="How a breadboard is wired inside, where a DIP chip goes, pin numbering, TTL logic levels, wire colours, debugging steps and pinouts for every 74xx chip.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/logic.css">
   <link rel="stylesheet" href="css/guide.css">
 </head>
 <body>
   <main class="wrap guide">
     <header class="page-head">
-      <h1>Breadboard 101</h1>
+      <h1>Breadboard basics</h1>
       <p>Most failed lab circuits are not logic mistakes. They are a chip on the wrong side of the channel, a rail that is not powered, or a wire one hole off. This page is about those.</p>
     </header>
 
@@ -117,7 +116,7 @@
     <section id="led" class="g-sec">
       <h2>LEDs and active-low outputs</h2>
       <p>An LED needs a resistor in series or it burns out. Pick R = (Vs − Vf) / I. With 5 V, a red LED (Vf ≈ 1.8 V) and 10 mA, that is 320 Ω, so use 330 Ω. Trainer LEDs already have their resistor built in, which is why you can wire straight to them.</p>
-      <p>Some chips mark outputs with a bar, like <span class="ov">Y0</span> on the 74138. That means <strong>active-low</strong>: the selected output goes to 0, so its LED turns off while the others stay lit. It is not a fault.</p>
+      <p>Some chips mark outputs with a bar, like <span class="olb">Y0</span> on the 74138. That means <strong>active-low</strong>: the selected output goes to 0, so its LED turns off while the others stay lit. It is not a fault.</p>
     </section>
 
     <section id="debug" class="g-sec">
@@ -135,8 +134,11 @@
 
     <section id="pinouts" class="g-sec">
       <h2>Pinout library</h2>
-      <p>Drawn the way the chip sits on the breadboard, not the way datasheets draw it. Red legs are power, gold legs are outputs. Pin names with a bar are active-low.</p>
-      <input class="input g-search" id="pinSearch" type="search" placeholder="Filter: 74151, counter, flip-flop…" aria-label="Filter chips">
+      <p>Each chip is drawn the way it sits on the breadboard: notch on the left, pin 1 bottom-left. The table under each drawing lists which pins are inputs and which are outputs, gate by gate. A bar over a name means active-low.</p>
+      <div class="pin-tools">
+        <input class="input g-search" id="pinSearch" type="search" placeholder="Filter: 74151, counter, flip-flop…" aria-label="Filter chips">
+        <span class="pin-legend"><span><i style="background:#b9c0c4"></i>input</span><span><i style="background:#d4a73a"></i>output</span><span><i style="background:#e05555"></i>power</span></span>
+      </div>
       <div class="pin-grid" id="pinGrid"></div>
     </section>
   </main>

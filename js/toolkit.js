@@ -1,13 +1,19 @@
 import { mountChrome, mountFooter, $, el, svg, parseSI, fmtSI } from './shared/site.js';
-import { truthFromExpr, solveFunction } from './shared/boolean.js';
 
 mountChrome('toolkit');
-mountFooter();
 
 const tools = $('#tools');
-function card(id, title, intro, wide = false) {
-  const c = el('section', { class: 'tool' + (wide ? ' t-wide' : ''), id }, el('h2', {}, title), intro ? el('p', {}, intro) : null);
+const CATS = [
+  { name: 'Components', ids: ['resistor', 'capcode', 'ledr'] },
+  { name: 'Circuit calculators', ids: ['ohm', 'rc', 'opamp', 't555'] },
+  { name: 'Number systems', ids: ['bases'] },
+];
+const SHORT = { resistor: 'Resistor colour code', capcode: 'Capacitor code', ledr: 'LED series resistor', ohm: "Ohm's law and divider", rc: 'RC, RL and RLC', opamp: 'Op-amp gain', t555: '555 timer', bases: 'Bases and codes' };
+const registry = new Map();
+function card(id, title, intro) {
+  const c = el('section', { class: 'tool', id: 'tool-' + id, hidden: true }, el('h2', {}, title), intro ? el('p', { class: 'tool-intro' }, intro) : null);
   tools.append(c);
+  registry.set(id, c);
   return c;
 }
 function num(labelText, value, attrs = {}) {
@@ -148,36 +154,6 @@ function nearestE12(v, up = true) {
   from('dec');
 })();
 
-// ---------------------------------------------------------------- expression to truth table
-(function expr() {
-  const c = card('expr', 'Expression to truth table', 'Type a Boolean expression. Use \' or ! for NOT, + for OR, juxtaposition or · for AND, ^ for XOR.', true);
-  const inp = el('input', { class: 'input mono', value: "A'B + BC' + AC", spellcheck: 'false' });
-  const err = el('p', { class: 't-err' });
-  const out = el('div', { class: 't-out' });
-  const table = el('div', { class: 'tt-tool-out' });
-  const link = el('a', { class: 'btn btn--sm', href: 'kmap.html' }, 'Open this in the K-map solver');
-  c.append(el('div', { class: 't-row' }, el('label', { class: 'field' }, el('span', {}, 'Expression'), inp)), err, out, el('div', { style: 'margin:10px 0' }, link), table);
-  function run() {
-    try {
-      const { vars, values } = truthFromExpr(inp.value);
-      if (vars.length > 6) throw new Error('Keep it to six variables or fewer.');
-      err.textContent = '';
-      const n = vars.length;
-      const ones = [], zeros = [];
-      values.forEach((v, m) => (v ? ones : zeros).push(m));
-      const sol = n ? solveFunction(n, ones, [], vars) : null;
-      out.innerHTML = `Variables <b>${vars.join(', ') || 'none'}</b><br>Σm(${ones.join(', ')})<br>ΠM(${zeros.join(', ')})` +
-        (sol ? `<br>Minimal SOP <b>${sol.sopText[0]}</b><br>Minimal POS <b>${sol.posText[0]}</b>` : '');
-      link.href = `kmap.html#n=${Math.max(2, n)}&v=${(vars.join('') + 'ABCDEF'.split('').filter(x => !vars.includes(x)).join('')).slice(0, Math.max(2, n))}&m=${ones.join('.')}&d=`;
-      table.replaceChildren(el('table', { class: 'table' },
-        el('thead', {}, el('tr', {}, ...vars.map(v => el('th', {}, v)), el('th', {}, 'F'))),
-        el('tbody', {}, ...values.map((v, m) => el('tr', {}, ...vars.map((_, k) => el('td', {}, String((m >> (n - 1 - k)) & 1))), el('td', { class: 'f' }, String(v)))))));
-    } catch (e) { err.textContent = e.message; }
-  }
-  inp.addEventListener('input', run);
-  run();
-})();
-
 // ---------------------------------------------------------------- 555
 (function t555() {
   const c = card('t555', '555 timer', 'Astable gives a square wave; monostable gives one pulse per trigger.');
@@ -296,3 +272,19 @@ function nearestE12(v, up = true) {
   code.input.addEventListener('input', run);
   run();
 })();
+
+// ---------------------------------------------------------------- navigation
+const nav = $('#tkNav');
+for (const cat of CATS) {
+  nav.append(el('p', { class: 'tk-cat' }, cat.name));
+  for (const id of cat.ids) nav.append(el('a', { href: '#' + id, class: 'tk-link', 'data-id': id }, SHORT[id]));
+}
+function show() {
+  const id = registry.has(location.hash.slice(1)) ? location.hash.slice(1) : 'resistor';
+  for (const [k, c] of registry) c.hidden = k !== id;
+  document.querySelectorAll('.tk-link').forEach(a => a.setAttribute('aria-current', a.dataset.id === id ? 'page' : 'false'));
+  const cat = CATS.find(c => c.ids.includes(id));
+  $('#tkCrumb').textContent = cat.name;
+}
+window.addEventListener('hashchange', show);
+show();

@@ -33,6 +33,7 @@ export const LED_COLORS = {
 
 // terminal points of an element in px
 export function terminals(e) {
+  if (e.terms) return e.terms;
   const [x, y] = e.p[0];
   switch (e.type) {
     case 'GND': return [[x, y]];

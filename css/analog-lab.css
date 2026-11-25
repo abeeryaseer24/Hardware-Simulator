@@ -1,0 +1,95 @@
+/* Analog trainer artwork + analog lab panels */
+
+.a-screen { fill: #0c1a12; stroke: #000; }
+.a-digits { fill: #7dff9a; font: 500 14px var(--f-mono); text-anchor: end; }
+.a-digits.fg { fill: #f2c40f; font-size: 12px; }
+.a-digits.big { fill: #7dff9a; font-size: 22px; }
+.a-small { fill: #c9d7de; font: 600 10.5px var(--f-body); }
+.a-small.mid, .a-tiny.mid { text-anchor: middle; }
+.a-tiny { fill: #8ea6b2; font: 500 8.5px var(--f-body); }
+.a-scope { fill: #06110d; stroke: #1c2c26; stroke-width: 2; }
+.a-grid { stroke: rgba(160, 220, 190, .1); }
+.a-tr { fill: none; stroke-width: 1.6; }
+.a-tr.ch1 { stroke: var(--ch1); }
+.a-tr.ch2 { stroke: var(--ch2); }
+.apad-pwr { fill: #e05555; stroke: #7d1d1d; }
+.apad-pwr.neg { fill: #5b7fd6; stroke: #22386e; }
+.apad-gnd { fill: #3a3f44; stroke: #111; }
+.apad-fg { fill: #e8b80c; stroke: #7a5f05; }
+.apad-dmm { fill: #3a3f44; stroke: #111; }
+.apad-dmm.red { fill: #e05555; stroke: #7d1d1d; }
+.apad-amm { fill: #ec7a1c; stroke: #7a3c0a; }
+.apad-scope { fill: #c9a24a; stroke: #6d5317; }
+.apad-sw, .apad-cc, .apad-pot { fill: #c9a24a; stroke: #6d5317; }
+
+/* parts on the breadboard */
+.apart { cursor: pointer; }
+.apart.is-ghost { opacity: .6; pointer-events: none; }
+.a-lead { stroke: #9aa3a8; stroke-width: 2; stroke-linecap: round; }
+.a-foot { fill: #c9ced1; }
+.a-res { fill: #dcc493; stroke: #8a7346; stroke-width: .8; }
+.a-cer { fill: #c9772f; stroke: #7a4214; stroke-width: .8; }
+.a-elec { fill: #1d3a78; stroke: #0d1f45; stroke-width: .8; }
+.a-elec-stripe { fill: #cfd8e8; }
+.a-ind { fill: #2e7d4f; stroke: #174d2e; stroke-width: .8; }
+.a-diode { fill: #222; }
+.a-zener { fill: #d98a3a; stroke: #7a4214; stroke-width: .6; }
+.a-band { fill: #d9d9d9; }
+.a-band.dark { fill: #222; }
+.a-led { stroke: rgba(0, 0, 0, .45); stroke-width: 1; }
+.a-glow { opacity: 0; filter: blur(4px); pointer-events: none; }
+.a-to92 { fill: #222; stroke: #000; }
+.a-partlab { fill: #10241c; font: 600 8px var(--f-mono); text-anchor: middle; paint-order: stroke; stroke: rgba(255, 255, 255, .85); stroke-width: 2.5px; pointer-events: none; }
+.a-partlab.inv { fill: #ddd; stroke: none; font-size: 6px; }
+.a-pin { fill: #555; font: 600 6px var(--f-body); text-anchor: middle; pointer-events: none; }
+.apart.is-selected .a-lead { stroke: var(--accent-hi); }
+.apart.is-selected > g > *:not(.a-glow), .apart.is-selected .chip-body, .apart.is-selected .a-to92 { stroke: var(--accent-hi); stroke-width: 2; }
+.apart.is-focus { filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 3px #fff); }
+
+/* instruments panel */
+.live-box { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+.meter { background: #0c1a12; border-radius: 8px; padding: 7px 10px; display: grid; gap: 1px; }
+.meter span { font-size: .7rem; color: #8fb3a1; font-weight: 600; }
+.meter b { font: 500 .92rem var(--f-mono); color: #7dff9a; }
+.meter.dmm { grid-column: span 2; }
+.meter.dmm b { font-size: 1.15rem; }
+.meter.c1 b { color: var(--ch1); }
+.meter.c2 b { color: var(--ch2); }
+.insp .live-box .meter:first-child { grid-column: span 1; }
+.ins-sec { padding: 12px 0 4px; border-top: 1px solid var(--rule); }
+.ins-sec .panel-label { margin-top: 0; }
+.ins-row { margin-bottom: 12px; }
+.ins-top { display: flex; justify-content: space-between; font-size: .84rem; font-weight: 550; }
+.ins-val { font-family: var(--f-mono); font-size: .8rem; color: var(--brand-hi); }
+.ins-ctl { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.ins-ctl input[type=range] { flex: 1; accent-color: var(--brand); }
+.ins-box { width: 82px; height: 30px; font-size: .78rem; }
+.sw-row { display: flex; gap: 16px; }
+.sw-tog { display: inline-flex; align-items: center; gap: 7px; font-size: .86rem; font-weight: 550; cursor: pointer; }
+.sw-tog input { width: 16px; height: 16px; accent-color: var(--brand); }
+.obs-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.obs th, .obs td { font-size: .76rem; padding: 4px 6px; text-align: center; }
+.obs td { font-family: var(--f-mono); font-size: .72rem; }
+.scope-cv { width: 100%; height: 220px; border-radius: 8px; border: 2px solid #1c2c26; display: block; }
+.scope-info { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); margin-top: 8px; line-height: 1.6; }
+
+/* parts bin */
+.part-pick { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; }
+.part-pick .part-row { grid-template-columns: 58px 1fr; }
+.pick-val { width: 92px; height: 32px; font-size: .78rem; padding: 0 6px; }
+.insp { padding: 12px; margin-bottom: 14px; border: 1px solid var(--brand); border-radius: 10px; background: var(--brand-tint); }
+.insp .field { margin-top: 8px; }
+.check-t td { font-size: .74rem; }
+.check-t td.note-cell { font-family: var(--f-body); }
+.ov .schem { padding: 10px; }
+.schem .sc-w { stroke: #9fc7b4; stroke-width: 2.4; stroke-linecap: round; }
+.schem .sc-s { fill: none; stroke: #e7efe9; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.schem .sc-s.thick { stroke-width: 3.2; }
+.schem .sc-s.thin { stroke-width: 1.6; }
+.schem .sc-s.fill { fill: #e7efe9; }
+.schem .sc-s.fillbg { fill: #0e1f19; }
+.schem .sc-pm { fill: #e7efe9; font: 700 11px var(--f-body); text-anchor: middle; }
+.schem .sc-pm.big { font-size: 15px; }
+.schem .sc-letter { fill: #e7efe9; font: 700 14px var(--f-body); text-anchor: middle; }
+.schem .sc-val { fill: #f3d27f; font: 500 11px var(--f-mono); }
+.schem .sc-dot { fill: #9fc7b4; }

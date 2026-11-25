@@ -1,6 +1,6 @@
 import { mountChrome, mountFooter, $, el, svg } from './shared/site.js';
 import { CHIPS } from './digital/chips.js';
-import { pinoutSVG } from './digital/pinout.js';
+import { pinoutSVG, pinRoles } from './digital/pinout.js';
 
 mountChrome('breadboard');
 mountFooter();
@@ -96,7 +96,7 @@ for (const c of Object.values(CHIPS)) {
     el('h3', {}, c.id),
     el('p', {}, c.name),
     pinoutSVG(c, null, { pitch: 30 }),
-    el("p", { class: "pin-meta" }, `VCC on pin ${c.vcc}, GND on pin ${c.gnd}`));
+    pinRoles(c));
   cards.push([card, (c.id + ' ' + c.name + ' ' + c.family).toLowerCase()]);
   grid.append(card);
 }

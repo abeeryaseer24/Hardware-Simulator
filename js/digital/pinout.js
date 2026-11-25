@@ -47,3 +47,35 @@ export function pinoutSVG(def, levels = null, opts = {}) {
   }
   return s;
 }
+
+// A compact "which pin does what" summary for a chip.
+const fmtName = (n) => (n.startsWith('/') ? n.slice(1) + '̅' : n);
+export function pinRoles(def) {
+  const sections = new Map();
+  const common = { in: [], out: [] };
+  for (let p = 1; p <= def.pins; p++) {
+    const k = def.kind[p];
+    if (k !== 'in' && k !== 'out') continue;
+    const name = def.names[p - 1];
+    const m = name.replace('/', '').match(/^(\d)([A-Za-z].*)$/);
+    const entry = `${fmtName(name)} (${p})`;
+    if (m) {
+      if (!sections.has(m[1])) sections.set(m[1], { in: [], out: [] });
+      sections.get(m[1])[k].push(entry);
+    } else common[k].push(entry);
+  }
+  const unit = def.family === 'Gates' ? 'Gate' : def.family === 'Flip-flops' ? 'Flip-flop' : 'Section';
+  const rows = [];
+  for (const [n, s] of [...sections].sort()) rows.push([`${unit} ${n}`, s.in.join(', ') || '—', s.out.join(', ') || '—']);
+  if (common.in.length || common.out.length) rows.push([sections.size ? 'Shared' : 'All', common.in.join(', ') || '—', common.out.join(', ') || '—']);
+  const t = document.createElement('table');
+  t.className = 'roles';
+  t.innerHTML = `<thead><tr><th></th><th>Inputs (pin)</th><th>Outputs (pin)</th></tr></thead><tbody>${rows.map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody>`;
+  const wrap = document.createElement('div');
+  wrap.className = 'roles-wrap';
+  const pw = document.createElement('p');
+  pw.className = 'roles-pwr';
+  pw.innerHTML = `<span class="r-dot pwr"></span>VCC pin ${def.vcc} &nbsp; <span class="r-dot gnd"></span>GND pin ${def.gnd}${def.names.includes('NC') ? ' &nbsp; NC = not connected' : ''}`;
+  wrap.append(t, pw);
+  return wrap;
+}

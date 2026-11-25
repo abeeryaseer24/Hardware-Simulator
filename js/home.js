@@ -1,5 +1,4 @@
 import { mountChrome, mountFooter, $, el, svg } from './shared/site.js';
-import { CHIPS } from './digital/chips.js';
 
 mountChrome('home');
 mountFooter();
@@ -128,9 +127,3 @@ function paint(changedGate) {
 }
 paint();
 
-// ---------------------------------------------------------------- chip strip
-const strip = $('#chipStrip');
-for (const c of Object.values(CHIPS)) {
-  strip.append(el('a', { class: 'chip-pill', href: `breadboard.html#chip-${c.id}`, title: c.name },
-    el('span', { class: 'chip-pill__num' }, c.id), el('span', { class: 'chip-pill__name' }, c.name)));
-}

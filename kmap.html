@@ -3,127 +3,108 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>K-map solver · Benchnote</title>
-  <meta name="description" content="Karnaugh map solver for 2 to 6 variables. Minimal SOP and POS, prime implicants, don't cares, Quine–McCluskey steps and a gate diagram.">
+  <title>K-Map Solver · Digital Lab · Benchnote</title>
+  <meta name="description" content="Karnaugh map solver for 2 to 6 variables. Enter a K-map, truth table, Boolean expression, minterms or maxterms and get the minimal SOP and POS with the working.">
+  <meta name="author" content="Talha Yaseer Abeer">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/lab.css">
   <link rel="stylesheet" href="css/kmap.css">
 </head>
-<body>
-  <main class="wrap kmap-page">
-    <header class="page-head km-head">
-      <div>
-        <h1>K-map solver</h1>
-        <p>Fill the map however you like: click cells, paste minterms, type an expression or edit the truth table. The minimal SOP and POS update as you go, with the groups drawn right on the map.</p>
-      </div>
-    </header>
+<body class="lab-page">
+  <div class="lab">
+    <aside class="lab-side" id="side" aria-label="Digital Lab">
+      <input class="input side-search" id="search" type="search" placeholder="Search experiments or chips" aria-label="Search experiments">
+      <a class="side-free" href="digital.html?free=1" style="text-decoration:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M10 9v6M14 9v6M17 9v6"/></svg>
+        <span>Free build<small>An empty trainer to try anything</small></span>
+      </a>
+      <div id="expList"></div>
+    </aside>
 
-    <section class="km-controls" aria-label="Map setup">
-      <div class="field">
-        <span>Variables</span>
-        <div class="seg" id="nSeg" role="group" aria-label="Number of variables"></div>
-      </div>
-      <label class="field">
-        <span>Names (MSB first)</span>
-        <input class="input mono" id="names" value="ABCD" maxlength="6" spellcheck="false" autocomplete="off">
-      </label>
-      <div class="field">
-        <span>Click puts</span>
-        <div class="seg" id="brushSeg" role="group" aria-label="What a click puts in a cell">
-          <button aria-pressed="true" data-brush="cycle">Cycle</button>
-          <button aria-pressed="false" data-brush="1">1</button>
-          <button aria-pressed="false" data-brush="0">0</button>
-          <button aria-pressed="false" data-brush="x">X</button>
+    <main class="lab-main km-main-col">
+      <header class="lab-head km-head">
+        <div class="crumbs"><button class="btn btn--sm side-toggle" id="sideBtn">Experiments</button><span>Digital Lab</span><span class="sep">/</span><span>Logic tools</span></div>
+        <h1>K-Map solver</h1>
+        <p class="aim">Enter a function any way you like. The minimal SOP and POS, the grouped map and the full working update as you type.</p>
+      </header>
+
+      <div class="lab-view km-scroll">
+        <div class="km-wrap">
+          <section class="km-card" aria-labelledby="methodTitle">
+            <h2 id="methodTitle" class="km-step"><span>1</span>How do you want to enter the function?</h2>
+            <div class="methods" role="radiogroup" id="methods"></div>
+          </section>
+
+          <section class="km-card" aria-labelledby="inputTitle">
+            <div class="km-card-head">
+              <h2 id="inputTitle" class="km-step"><span>2</span><span id="inputName">Fill the map</span></h2>
+              <div class="km-settings">
+                <label class="field inline"><span>Variables</span>
+                  <select class="input" id="nSel"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select>
+                </label>
+                <label class="field inline"><span>Names</span>
+                  <input class="input mono" id="names" value="ABCD" maxlength="6" spellcheck="false" autocomplete="off">
+                </label>
+                <button class="btn btn--sm" data-fill="0">Clear all</button>
+                <button class="btn btn--sm" data-fill="1">Fill all with 1</button>
+              </div>
+            </div>
+            <div id="inputPanel"></div>
+          </section>
+
+          <section class="km-card km-result" aria-labelledby="resTitle">
+            <h2 id="resTitle" class="km-step"><span>3</span>Result</h2>
+            <div class="res-grid">
+              <div>
+                <div class="km-map-top">
+                  <div class="seg" id="showSeg" role="group" aria-label="Which groups to draw">
+                    <button aria-pressed="true" data-show="sop">Groups of 1s (SOP)</button>
+                    <button aria-pressed="false" data-show="pos">Groups of 0s (POS)</button>
+                  </div>
+                  <span class="km-cellinfo" id="cellInfo" aria-live="polite"></span>
+                </div>
+                <div id="mapHost" class="km-maps"></div>
+                <p class="hint" id="mapHint"></p>
+              </div>
+              <div class="res-side">
+                <div class="res-block">
+                  <div class="res-head"><span>Minimal SOP</span><button class="btn btn--sm btn--ghost" data-copy="sop">Copy</button></div>
+                  <output id="sopOut" class="res-expr"></output>
+                  <p class="res-meta" id="sopMeta"></p>
+                  <div id="sopAlt"></div>
+                </div>
+                <div class="res-block pos">
+                  <div class="res-head"><span>Minimal POS</span><button class="btn btn--sm btn--ghost" data-copy="pos">Copy</button></div>
+                  <output id="posOut" class="res-expr"></output>
+                  <p class="res-meta" id="posMeta"></p>
+                  <div id="posAlt"></div>
+                </div>
+                <dl class="res-forms" id="forms"></dl>
+                <button class="btn btn--sm" id="shareBtn">Copy link to this function</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="km-card" aria-label="Working">
+            <div class="seg km-tabs" role="tablist" id="workTabs">
+              <button role="tab" aria-selected="true" data-work="pi">Prime implicants</button>
+              <button role="tab" aria-selected="false" data-work="qm">Step-by-step working</button>
+              <button role="tab" aria-selected="false" data-work="tt">Truth table</button>
+              <button role="tab" aria-selected="false" data-work="circ">Logic circuit</button>
+            </div>
+            <div data-wpane="pi"><div id="piTable"></div><h3 class="km-sub">Coverage chart</h3><p class="hint">A filled dot means the implicant covers that minterm. A ringed dot means it is the only one that does, which makes it essential.</p><div class="chart-scroll" id="piChart"></div></div>
+            <div data-wpane="qm" hidden><div id="qmSteps" class="qm-steps"></div></div>
+            <div data-wpane="tt" hidden><div class="tt-scroll"><table class="table km-tt" id="ttTable"></table></div></div>
+            <div data-wpane="circ" hidden><p class="hint">Two-level AND–OR realisation of the minimal SOP. Replace every gate with a NAND and it still works, so it maps straight onto a 7400.</p><div id="circuit" class="circuit-host"></div></div>
+          </section>
         </div>
       </div>
-      <div class="field">
-        <span>Fill</span>
-        <div class="km-fill">
-          <button class="btn btn--sm" data-fill="0">All 0</button>
-          <button class="btn btn--sm" data-fill="1">All 1</button>
-          <button class="btn btn--sm" data-fill="rand">Random</button>
-          <button class="btn btn--sm" data-fill="invert">Invert</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="km-inputs" aria-label="Type the function">
-      <div class="seg" id="modeSeg" role="tablist">
-        <button aria-pressed="true" data-mode="min">Minterms Σm</button>
-        <button aria-pressed="false" data-mode="max">Maxterms ΠM</button>
-        <button aria-pressed="false" data-mode="expr">Expression</button>
-      </div>
-      <form class="km-entry" id="entryForm" autocomplete="off">
-        <input class="input mono" id="entry" spellcheck="false" placeholder="1, 3, 5, 7  d(2, 6)">
-        <button class="btn btn--mask" type="submit">Load into map</button>
-      </form>
-      <p class="km-entry-help" id="entryHelp">Comma-separated minterm numbers. Put don't cares in d( ).</p>
-    </section>
-
-    <div class="km-main">
-      <section class="km-map-card" aria-label="Karnaugh map">
-        <div class="km-map-top">
-          <div class="seg" id="showSeg" role="group" aria-label="Which groups to draw">
-            <button aria-pressed="true" data-show="sop">Group the 1s (SOP)</button>
-            <button aria-pressed="false" data-show="pos">Group the 0s (POS)</button>
-            <button aria-pressed="false" data-show="none">No groups</button>
-          </div>
-          <span class="km-cellinfo" id="cellInfo" aria-live="polite"></span>
-        </div>
-        <div id="mapHost" class="km-maps"></div>
-        <p class="km-legend">Click a cell to change it. Drag to paint several. Small numbers are the minterm index. Groups that wrap around an edge are drawn open at that edge.</p>
-      </section>
-
-      <section class="km-results" aria-label="Results">
-        <div class="res-block res-sop">
-          <div class="res-head"><h2>Minimal SOP</h2><button class="btn btn--sm btn--ghost" data-copy="sop">Copy</button></div>
-          <output id="sopOut" class="res-expr"></output>
-          <p class="res-meta" id="sopMeta"></p>
-          <div id="sopAlt"></div>
-        </div>
-        <div class="res-block res-pos">
-          <div class="res-head"><h2>Minimal POS</h2><button class="btn btn--sm btn--ghost" data-copy="pos">Copy</button></div>
-          <output id="posOut" class="res-expr"></output>
-          <p class="res-meta" id="posMeta"></p>
-          <div id="posAlt"></div>
-        </div>
-        <dl class="res-forms" id="forms"></dl>
-        <button class="btn btn--sm" id="shareBtn">Copy link to this map</button>
-      </section>
-    </div>
-
-    <div class="km-lower">
-      <section class="km-card">
-        <h2>Truth table</h2>
-        <p class="hint">Click an F cell to change it. The map follows.</p>
-        <div class="tt-scroll"><table class="table km-tt" id="ttTable"></table></div>
-      </section>
-      <section class="km-card">
-        <h2>Prime implicants</h2>
-        <p class="hint">Essential ones cover a minterm nothing else can, so every minimal answer must use them.</p>
-        <div id="piTable"></div>
-        <h3 class="km-sub">Coverage chart</h3>
-        <div class="chart-scroll" id="piChart"></div>
-      </section>
-    </div>
-
-    <section class="km-card km-wide">
-      <h2>Gate diagram of the SOP</h2>
-      <p class="hint">Two-level AND–OR. Swap every gate for a NAND and it still works, which is why SOP maps straight onto a 7400.</p>
-      <div id="circuit" class="circuit-host"></div>
-    </section>
-
-    <section class="km-card km-wide">
-      <details id="qmDetails">
-        <summary><h2>Quine–McCluskey working</h2><span class="hint">The tabular method the solver actually runs. Useful for checking hand working.</span></summary>
-        <div id="qmSteps" class="qm-steps"></div>
-      </details>
-    </section>
-  </main>
-
+    </main>
+  </div>
   <script type="module" src="js/kmap.js"></script>
 </body>
 </html>

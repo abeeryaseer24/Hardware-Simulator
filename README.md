@@ -1,63 +1,54 @@
 # Benchnote
 
-A browser-based lab bench for EEE students: practise digital and analog lab experiments before the real session, with no installs and no sign-up.
+A free virtual lab for electrical and electronic engineering students. Every experiment is shown fully wired on a breadboard, with an empty board beside it so you can build it yourself and have it checked.
 
 **Live site:** https://abeeryaseer24.github.io/Hardware-Simulator/
 
-## What's inside
+## Sections
 
-| Page | What it does |
+| Section | What it does |
 |---|---|
-| **Logic bench** | A digital trainer with a full-size breadboard, 8 switches, 8 LEDs, a 7-segment display, clock generator, pulsers and logic probe. 30 real 74xx chips with datasheet pinouts. 29 guided experiments with an automatic truth-table checker. |
-| **K-map solver** | 2 to 6 variables with don't cares. Minimal SOP and POS with the groups drawn on the map, prime implicant chart, Quine–McCluskey working, NAND/NOR forms and a gate diagram. |
-| **Analog bench** | Draw a schematic and it simulates live: R, L, C, diodes, LEDs, Zeners, NPN/PNP transistors and op-amps, with meters and a two-channel oscilloscope. 16 ready circuits. |
-| **Breadboard 101** | How a breadboard is wired, placing DIP chips, power pins, TTL levels, wire colours, debugging steps and a pinout library. |
-| **Toolkit** | Resistor colour codes, number bases and codes, expression to truth table, 555 timer, LED resistor, dividers, RC/RLC and op-amp gain. |
-| **Revision sheet** | Boolean laws, flip-flop tables, counters, rectifier, BJT and op-amp formulas. Prints on two pages. |
+| **Digital Lab** | 29 experiments on a digital trainer (switches, LEDs, 7-segment display, clock, pulsers, logic probe) with 30 real 74xx chips. Includes the **K-Map solver** (K-map, truth table, Boolean expression, minterm and maxterm input; minimal SOP/POS with the working). |
+| **Analog Lab** | 25 experiments on an analog trainer with a DC supply (±12 V, two variable outputs), function generator, multimeter, two ammeters, two-channel oscilloscope, switches, constant-current source and potentiometer. |
+| **Tools** | Resistor and capacitor codes, LED resistor, Ohm's law and dividers, RC/RLC, op-amp gain, 555 timer, number bases and codes. |
+| **Learn** | Breadboard basics with a pinout library (inputs and outputs listed for every chip), a printable revision sheet, and a free-form schematic sandbox. |
 
-### Logic bench details
+## How each experiment works
 
-- Hover any hole or wire to highlight the whole electrical node it belongs to.
-- **Logic view** colours every wire by its level: red HIGH, blue LOW, grey floating, orange when two outputs fight.
-- The trainer notices unpowered chips, floating inputs, output conflicts, shorts between +5 V and GND, and chips powered backwards (which burn out, as they would on a real bench).
-- **Guide me** shows ghost outlines for every chip and wire and ticks steps off as you wire them.
-- **Check my circuit** runs every input combination (or a clocked sequence for flip-flops and counters) and shows which rows fail.
-- Logic analyzer trace, undo/redo, save/open, and shareable links.
+1. **Overview** – aim, theory, procedure, circuit diagram or truth table, components and expected results.
+2. **Reference build** – the circuit wired on the breadboard and running. Step through the build one part or wire at a time.
+3. **Practice** – an empty breadboard below the reference. Build it yourself, then press **Check**:
+   - digital circuits are tested against every row of the truth table (or the clocked sequence);
+   - analog circuits are compared with the reference part by part (voltage across and current through each component).
 
-### Experiments included
+Progress is saved in the browser, and finished experiments are ticked in the list.
 
-Basic gates (AND, OR, NOT, NAND, NOR, XOR) · NAND and NOR universality · half/full adder · half subtractor · 4-bit adder (7483) · 4-bit comparator (7485) · 4:1 MUX (74153) · Boolean function with an 8:1 MUX (74151) · 3-to-8 decoder (74138) · 1-to-4 demux (74155) · priority encoder (74148) · BCD to 7-segment (7447) · SR latch · D flip-flop (7474) · JK flip-flop (7476) · mod-16 counter (7493) · decade counter on a display (7490 + 7447) · mod-10 counter (74161) · universal shift register (74194)
+### Analog experiments
 
-## How the simulators work
+Ohm's law · series and parallel resistors · voltage divider · KVL and KCL · superposition · Thevenin · Norton · maximum power transfer · RC charging and discharging · RC low-pass and high-pass filters · series RLC · diode characteristic · half-wave rectifier · clipper · Zener regulator · LED · BJT switch · common-emitter amplifier · 741 inverting, non-inverting, follower, summing, comparator and integrator
 
-- **Digital:** the board is reduced to electrical nodes with union-find (breadboard strips, rails and wires). Chip outputs drive nodes; the solver iterates until nothing changes, detecting conflicts and oscillation. Flip-flops and counters keep their own state and react to clock edges.
-- **Analog:** modified nodal analysis with backward-Euler companion models for capacitors and inductors and Newton–Raphson iteration (with junction-voltage limiting) for diodes, BJTs (Ebers–Moll) and op-amps. Each circuit starts from its DC operating point.
-- **K-map:** Quine–McCluskey to find prime implicants, then an exact branch-and-bound cover to find every minimum solution.
+### Digital experiments
 
-Everything is plain HTML, CSS and JavaScript modules. No build step and no dependencies.
+Basic gates · NAND and NOR universality · half and full adder · half subtractor · 7483 adder · 7485 comparator · 74153 MUX · Boolean function with 74151 · 74138 decoder · 74155 demux · 74148 encoder · 7447 BCD to 7-segment · SR latch · 7474 D flip-flop · 7476 JK flip-flop · 7493 counter · 7490 + 7447 decade counter · 74161 mod-10 counter · 74194 shift register
 
-## Run it locally
+## How the simulation works
 
-Any static file server works, for example:
+- **Digital:** the breadboard is reduced to electrical nodes; chips are evaluated until the circuit settles, with detection of output conflicts, floating inputs, unpowered or reversed chips, and oscillation.
+- **Analog:** modified nodal analysis with backward-Euler models for capacitors and inductors and Newton–Raphson iteration for diodes, BJTs and op-amps. Every circuit starts from its DC operating point.
+- **K-map:** Quine–McCluskey plus an exact minimum cover.
+
+Plain HTML, CSS and JavaScript modules. No build step, no dependencies.
+
+## Run locally
 
 ```bash
 python -m http.server 8000
 ```
 
-Then open http://localhost:8000.
+Open http://localhost:8000.
 
-## Deploy
+## Credits
 
-- **GitHub Pages:** Settings → Pages → Deploy from branch → `main` / root.
-- **Vercel or Netlify:** import the repository; no build command, output directory is the root.
+Designed and developed by **Talha Yaseer Abeer**.
 
-## Project layout
-
-```
-index.html, logic-bench.html, kmap.html, analog-bench.html,
-breadboard.html, toolkit.html, revision.html
-css/            shared styles and one stylesheet per page
-js/shared/      page chrome, helpers, Boolean parser and minimiser
-js/digital/     chip library, trainer model and solver, board renderer, experiments
-js/analog/      MNA circuit engine and preset circuits
-```
+© 2026 Talha Yaseer Abeer. All rights reserved. Free to use for personal study; redistribution or reuse of the code or content requires the author's permission.

@@ -1,3 +1,22 @@
+/* Schematic sandbox */
+.bench { display: grid; grid-template-columns: 270px minmax(0, 1fr) 320px; height: calc(100vh - var(--bar-h)); min-height: 560px; }
+.bench__side { background: var(--surface); border-right: 1px solid var(--rule); overflow-y: auto; display: flex; flex-direction: column; }
+.bench__side--right { border-right: 0; border-left: 1px solid var(--rule); }
+.bench__stage { position: relative; overflow: hidden; background: var(--stage); background-image: radial-gradient(circle, rgba(233,241,236,.06) 1px, transparent 1.5px); background-size: 20px 20px; touch-action: none; }
+.stage-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px 0; }
+.panel-tabs { display: flex; border-bottom: 1px solid var(--rule); padding: 0 6px; position: sticky; top: 0; background: var(--surface); z-index: 2; }
+.panel-tabs button { flex: 1; border: 0; background: transparent; cursor: pointer; padding: 11px 4px 10px; font-size: .86rem; font-weight: 550; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.panel-tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brand); }
+.panel-body { padding: 16px; }
+.panel-label { font-size: .76rem; color: var(--muted); font-weight: 600; margin: 14px 0 6px; }
+.drawer-toggle { display: none; }
+@media (max-width: 1100px) {
+  .bench { grid-template-columns: 250px minmax(0, 1fr); }
+  .bench__side--right { position: fixed; right: 0; top: var(--bar-h); bottom: 0; width: min(340px, 92vw); z-index: 40; transform: translateX(100%); transition: transform .22s; box-shadow: var(--shadow-2); }
+  .bench__side--right.is-open { transform: none; }
+  .drawer-toggle { display: inline-flex; }
+}
+@media (max-width: 760px) { .bench { grid-template-columns: 1fr; height: auto; } .bench__stage { min-height: 60vh; } }
 /* Analog bench */
 
 body.is-bench { overflow: hidden; }
@@ -37,7 +56,7 @@ body.is-bench { overflow: hidden; }
 .pm { fill: #e7efe9; font: 700 11px var(--f-body); text-anchor: middle; }
 .pm.big { font-size: 15px; }
 .meter-letter { fill: #e7efe9; font: 800 15px var(--f-display); text-anchor: middle; }
-.val { fill: #b9cbc1; font: 600 10.5px var(--f-mono); }
+.val { fill: #b9cbc1; font: 500 10.5px var(--f-mono); }
 .reading { fill: var(--gold-hi); font: 600 12px var(--f-mono); transform: translateY(14px); }
 .led-glow { opacity: 0; filter: blur(5px); pointer-events: none; mix-blend-mode: screen; }
 .hit { stroke: transparent; stroke-width: 14; }

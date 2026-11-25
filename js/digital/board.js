@@ -27,6 +27,8 @@ export class Board {
     this.selected = null;         // {kind:'wire'|'chip', id}
     this.guide = null;            // {chips:[], wires:[], step}
     this.vb = { x: 0, y: 0, w: VIEW.w, h: VIEW.h };
+    this.readonly = false;
+    this.focusWire = null;
     this.build();
   }
 
@@ -311,6 +313,7 @@ export class Board {
       const act = e.target.closest?.('[data-act]');
       if (act) { this.control(act.dataset.act, true); down = { act: act.dataset.act }; e.preventDefault(); return; }
       down = { x: e.clientX, y: e.clientY, p, moved: false, vb: { ...this.vb }, id: e.pointerId };
+      if (this.readonly) { s.setPointerCapture(e.pointerId); return; }
       const chip = this.mode === 'wire' ? this.hitChip(p.x, p.y) : null;
       const pt = this.hitPoint(p.x, p.y);
       if (chip && !this.pending && !(pt && !parsePoint(pt)?.row?.match(/^[ef]$/))) {
@@ -352,6 +355,10 @@ export class Board {
       if (!down) return;
       if (down.act) { this.control(down.act, false); down = null; return; }
       const p = this.toSvg(e);
+      if (this.readonly) {
+        if (!down.moved) { const c = this.hitChip(p.x, p.y); if (c) this.hooks.select({ kind: 'chip', id: c.id }); }
+        down = null; return;
+      }
       if (down.chip && down.moved) { this.hooks.change(); down = null; return; }
       if (this.mode === 'place' && !down.moved) {
         this.placeAt(p);
@@ -386,6 +393,7 @@ export class Board {
 
     s.addEventListener('contextmenu', (e) => {
       e.preventDefault();
+      if (this.readonly) return;
       const wire = this.hitWire(e.target);
       const p = this.toSvg(e);
       if (wire) { this.removeWire(wire.id); return; }
@@ -396,6 +404,7 @@ export class Board {
     });
 
     s.addEventListener('dblclick', (e) => {
+      if (this.readonly) return;
       const wire = this.hitWire(e.target);
       if (wire) this.removeWire(wire.id);
     });
@@ -577,7 +586,7 @@ export class Board {
       const sel = this.selected?.id === w.id;
       const inNet = hoverNet && this.t.netOf(w.a) === hoverNet;
       const dim = hoverNet && !inNet;
-      const g = svg('g', { class: 'wire' + (sel ? ' is-selected' : '') + (inNet ? ' in-net' : '') + (dim ? ' is-dim' : '') + (this.levelView && lv === 1 ? ' is-live' : ''), 'data-wire': w.id });
+      const g = svg('g', { class: 'wire' + (sel ? ' is-selected' : '') + (this.focusWire === w.id ? ' is-focus' : '') + (inNet ? ' in-net' : '') + (dim ? ' is-dim' : '') + (this.levelView && lv === 1 ? ' is-live' : ''), 'data-wire': w.id });
       g.append(svg('path', { d, class: 'w-hit' }));
       g.append(svg('path', { d, class: 'w-shadow' }));
       g.append(svg('path', { d, class: 'w-core', stroke: col }));

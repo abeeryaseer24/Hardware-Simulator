@@ -3,34 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Toolkit · Benchnote</title>
-  <meta name="description" content="Resistor colour codes, number base and code conversion, Boolean expression to truth table, 555 timer, LED resistor, divider, RC and op-amp calculators.">
+  <title>Tools · Benchnote</title>
+  <meta name="description" content="Resistor and capacitor codes, LED resistor, Ohm's law and dividers, RC/RLC, op-amp gain, 555 timer and number base conversion.">
+  <meta name="author" content="Talha Yaseer Abeer">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/lab.css">
   <link rel="stylesheet" href="css/guide.css">
 </head>
-<body>
-  <main class="wrap guide">
-    <header class="page-head">
-      <h1>Toolkit</h1>
-      <p>The small calculations that eat time in a lab report. Every field accepts engineering notation: 4.7k, 10u, 100n, 2M2.</p>
-    </header>
-    <nav class="toc" aria-label="Tools">
-      <a href="#resistor">Resistor colours</a>
-      <a href="#bases">Number bases and codes</a>
-      <a href="#expr">Expression to truth table</a>
-      <a href="#t555">555 timer</a>
-      <a href="#ledr">LED resistor</a>
-      <a href="#ohm">Ohm's law and dividers</a>
-      <a href="#rc">RC, RL, RLC</a>
-      <a href="#opamp">Op-amp gain</a>
-      <a href="#capcode">Capacitor codes</a>
-    </nav>
-    <div class="tools" id="tools"></div>
-  </main>
+<body class="lab-page">
+  <div class="lab">
+    <aside class="lab-side" id="side" aria-label="Tools">
+      <nav id="tkNav" class="tk-nav" aria-label="Tool list"></nav>
+      <p class="hint tk-note">Boolean expressions and K-maps live in the Digital Lab: <a href="kmap.html">K-Map solver</a>.</p>
+    </aside>
+    <main class="lab-main">
+      <header class="lab-head" style="padding-bottom:14px">
+        <div class="crumbs"><button class="btn btn--sm side-toggle" id="sideBtn">Tools</button><span>Tools</span><span class="sep">/</span><span id="tkCrumb"></span></div>
+        <p class="aim" style="margin:0">Every field accepts engineering notation such as 4.7k, 10u, 100n or 2M2. Results update as you type.</p>
+      </header>
+      <div class="lab-view tk-view">
+        <div class="tk-main" id="tools"></div>
+      </div>
+    </main>
+  </div>
+  <script type="module">
+    import { bindSideToggle } from './js/shared/lab-side.js';
+    bindSideToggle();
+  </script>
   <script type="module" src="js/toolkit.js"></script>
 </body>
 </html>

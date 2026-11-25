@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About · Benchnote</title>
+  <meta name="description" content="Why Benchnote exists, what it covers, how the simulators work, and who made it.">
+  <meta name="author" content="Talha Yaseer Abeer">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/guide.css">
+</head>
+<body>
+  <main class="wrap about">
+    <header class="page-head">
+      <h1>About Benchnote</h1>
+      <p>Lab time is short and a trainer board is not always in reach. Benchnote lets you rehearse every experiment at home, so that in the lab you are checking results instead of hunting for a missing ground wire.</p>
+    </header>
+
+    <div class="about-grid">
+      <section>
+        <h2>What it covers</h2>
+        <ul class="g-list">
+          <li><strong>Digital Lab:</strong> 29 experiments on a digital trainer with 30 TTL chips, from basic gates to counters and shift registers.</li>
+          <li><strong>Analog Lab:</strong> DC network theorems, RC and RLC circuits, diodes, transistors and op-amps on an analog trainer with a power supply, function generator, multimeter, ammeters and a two-channel oscilloscope.</li>
+          <li><strong>K-Map Solver:</strong> minimal SOP and POS for two to six variables, with prime implicants and the tabular working.</li>
+          <li><strong>Tools and notes:</strong> calculators, breadboard basics and a printable revision sheet.</li>
+        </ul>
+
+        <h2>How each experiment works</h2>
+        <ol class="g-list">
+          <li><strong>Overview:</strong> aim, theory, the circuit diagram and the expected results.</li>
+          <li><strong>Reference build:</strong> the circuit already wired on a breadboard. Use the switches and instruments, and step through the wiring one connection at a time.</li>
+          <li><strong>Practice:</strong> an empty breadboard next to the reference. Build it yourself, then press Check to have your circuit tested.</li>
+        </ol>
+
+        <h2>How the simulation works</h2>
+        <p>The digital trainer reduces the breadboard to electrical nodes and evaluates every chip until the circuit settles, so it can tell you about unpowered chips, floating inputs and outputs fighting each other. The analog trainer solves the circuit with modified nodal analysis and Newton–Raphson iteration, the same family of methods SPICE uses, with simplified device models.</p>
+        <p class="note">Results are close to a real bench but not identical. Real components have tolerances, and real wires come loose. Use Benchnote to understand and rehearse, and trust your lab instruments on the day.</p>
+      </section>
+
+      <aside class="about-card">
+        <h2>Credits</h2>
+        <p>Designed and developed by</p>
+        <p class="about-name">Talha Yaseer Abeer</p>
+        <p class="hint">Electrical and Electronic Engineering</p>
+        <hr>
+        <p>Feedback and suggestions for new experiments are welcome on the project's GitHub page.</p>
+        <a class="btn btn--sm" href="https://github.com/abeeryaseer24/Hardware-Simulator">View on GitHub</a>
+        <hr>
+        <p class="hint">© 2026 Talha Yaseer Abeer. All rights reserved. Benchnote may be used freely for personal study. Redistribution or reuse of the code or content requires the author's permission.</p>
+      </aside>
+    </div>
+  </main>
+  <script type="module">
+    import { mountChrome, mountFooter } from './js/shared/site.js';
+    mountChrome('about');
+    mountFooter();
+  </script>
+</body>
+</html>

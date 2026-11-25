@@ -2,9 +2,9 @@ import { mountChrome, toast, $, $$, el, svg, parseSI, fmtSI } from './shared/sit
 import { Circuit, TYPES, LED_COLORS, G, terminals } from './analog/engine.js';
 import { PRESETS } from './analog/presets.js';
 
-mountChrome('analog');
+mountChrome('sandbox');
 
-const STORE = 'bn-analog-v1';
+const STORE = 'bn-sandbox-v1';
 const circuit = new Circuit();
 let preset = null;
 let running = true;
