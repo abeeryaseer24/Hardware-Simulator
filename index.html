@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Benchnote · EEE lab simulator</title>
+  <meta name="description" content="Practise digital and analog electronics labs in the browser: a 74xx breadboard trainer, an analog circuit simulator with an oscilloscope, and a K-map solver.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800;900&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/home.css">
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="wrap hero__grid">
+        <div class="hero__copy">
+          <h1>Practise the lab before you walk into it.</h1>
+          <p class="hero__lede">A breadboard trainer for 74xx logic chips, an analog circuit simulator with a two-channel scope, and a K-map solver that shows its working. It runs in the browser, on a phone too, with no sign-up.</p>
+          <div class="hero__cta">
+            <a class="btn btn--gold" href="logic-bench.html">Open the logic bench</a>
+            <a class="btn btn--ghost hero__ghost" href="analog-bench.html">Open the analog bench</a>
+          </div>
+        </div>
+        <figure class="demo" aria-label="Try a logic gate">
+          <div id="demo"></div>
+          <figcaption>Flip A and B. Tap the chip to change the gate.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="wrap board-sec" aria-labelledby="benchTitle">
+      <h2 id="benchTitle">What is on the bench</h2>
+      <div class="board">
+        <a class="fp fp--big" href="logic-bench.html">
+          <span class="fp__ref">U1</span>
+          <h3>Logic bench</h3>
+          <p>A full digital trainer: 8 switches, 8 LEDs, a 7-segment display, a clock, pulsers and a logic probe around a real-size breadboard.</p>
+          <ul>
+            <li>30 chips from the 7400 to the 74194, wired with datasheet pinouts</li>
+            <li>29 lab experiments with a step-by-step wiring guide</li>
+            <li>“Check my circuit” runs every row of the truth table for you</li>
+            <li>Hover any hole to light up everything connected to it</li>
+            <li>Catches unpowered chips, floating inputs, shorts and outputs fighting each other</li>
+          </ul>
+        </a>
+        <a class="fp fp--big" href="analog-bench.html">
+          <span class="fp__ref">U2</span>
+          <h3>Analog bench</h3>
+          <p>Draw a schematic and it runs: voltages colour the wires and moving dots show the current.</p>
+          <ul>
+            <li>R, L, C, diodes, LEDs, Zeners, BJTs and op-amps</li>
+            <li>Voltmeter, ammeter and a two-channel oscilloscope</li>
+            <li>16 ready circuits: rectifiers, filters, RLC ringing, amplifiers, a CE stage</li>
+            <li>Sweep any value with a slider while it runs</li>
+          </ul>
+        </a>
+        <a class="fp" href="kmap.html">
+          <span class="fp__ref">U3</span>
+          <h3>K-map solver</h3>
+          <p>2 to 6 variables, don't cares, minimal SOP and POS with the loops drawn on the map, prime implicants, Quine–McCluskey steps and a gate diagram.</p>
+        </a>
+        <a class="fp" href="breadboard.html">
+          <span class="fp__ref">J1</span>
+          <h3>Breadboard 101</h3>
+          <p>Which holes are joined, where a chip goes, how pins are numbered, wire colours, and a debugging routine for when the LED stays dark.</p>
+        </a>
+        <a class="fp" href="toolkit.html">
+          <span class="fp__ref">J2</span>
+          <h3>Toolkit</h3>
+          <p>Resistor colour codes, number bases and codes, 555 timer, LED resistor, dividers, RC cut-off and an expression-to-truth-table tool.</p>
+        </a>
+        <a class="fp" href="revision.html">
+          <span class="fp__ref">J3</span>
+          <h3>Revision sheet</h3>
+          <p>Boolean laws, flip-flop tables, counters, TTL levels and the analog formulas that come up in viva. Prints on two pages.</p>
+        </a>
+      </div>
+    </section>
+
+    <section class="wrap night" aria-labelledby="nightTitle">
+      <h2 id="nightTitle">The night before a lab exam</h2>
+      <ol class="night__steps">
+        <li><strong>Read Breadboard 101.</strong> Ten minutes there saves the classic mistakes: a chip on one side of the channel, power on the wrong pin, a split rail.</li>
+        <li><strong>Build each experiment with the guide on.</strong> The dashed outlines show where every chip and wire goes, and the steps tick off as you wire.</li>
+        <li><strong>Clear the board and build it again from memory.</strong> Then press “Check my circuit”. Red rows tell you exactly which input combination fails.</li>
+        <li><strong>Break it on purpose.</strong> Pull the ground wire, short two outputs, leave an input floating. Knowing what the fault looks like is half of debugging in the lab.</li>
+        <li><strong>Skim the revision sheet.</strong> Truth tables, excitation tables and pinouts are what viva questions are made of.</li>
+      </ol>
+    </section>
+
+    <section class="wrap chips-sec" aria-labelledby="chipTitle">
+      <h2 id="chipTitle">Chips in the parts drawer</h2>
+      <p class="chips-sec__lede">Every one opens its pinout in Breadboard 101.</p>
+      <div class="chip-strip" id="chipStrip"></div>
+    </section>
+  </main>
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>

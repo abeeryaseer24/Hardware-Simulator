@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logic bench · Benchnote</title>
+  <meta name="description" content="A digital trainer and breadboard in the browser. Place 74xx chips, wire them up, and check your circuit against the truth table.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/logic.css">
+</head>
+<body class="is-bench">
+  <main class="bench" id="bench">
+    <aside class="bench__side bench__side--left" aria-label="Experiments and parts">
+      <div class="panel-tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="exp">Experiments</button>
+        <button role="tab" aria-selected="false" data-tab="parts">Chips</button>
+      </div>
+      <div class="panel-body" data-pane="exp">
+        <label class="field search">
+          <span class="sr-only">Find an experiment</span>
+          <input class="input" id="expSearch" type="search" placeholder="Find: adder, 74138, counter…">
+        </label>
+        <div id="expList" class="exp-list"></div>
+      </div>
+      <div class="panel-body" data-pane="parts" hidden>
+        <p class="hint">Pick a chip, then click the breadboard where it should sit. It always straddles the centre channel.</p>
+        <div id="chipList" class="chip-list"></div>
+      </div>
+    </aside>
+
+    <section class="bench__stage" id="stage" aria-label="Trainer">
+      <div class="stage-toolbar">
+        <div class="tool-group" role="group" aria-label="View">
+          <button id="zoomIn" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M11 8v6M8 11h6M16 16l4.5 4.5"/></svg></button>
+          <button id="zoomOut" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M8 11h6M16 16l4.5 4.5"/></svg></button>
+          <button id="zoomBB" title="Zoom to breadboard">Board</button>
+          <button id="zoomFit" title="Show the whole trainer">Whole kit</button>
+        </div>
+        <div class="tool-group" role="group" aria-label="Edit">
+          <button id="undoBtn" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+          <button id="redoBtn" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+          <button id="clearBtn" title="Remove every chip and wire">Clear</button>
+        </div>
+        <div class="tool-group" role="group" aria-label="Wires">
+          <button id="levelBtn" aria-pressed="false" title="Colour every wire by its logic level">Logic view</button>
+          <button id="styleBtn" title="Switch between arched and straight wires">Arched</button>
+          <span class="sep"></span>
+          <div class="swatches" id="swatches" role="radiogroup" aria-label="Wire colour"></div>
+        </div>
+        <div class="tool-group" role="group" aria-label="File">
+          <button id="shareBtn" title="Copy a link to this circuit">Share link</button>
+          <button id="exportBtn" title="Download as a file">Save</button>
+          <button id="importBtn" title="Open a saved circuit">Open</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+        <button class="btn btn--gold btn--sm drawer-toggle" id="drawerBtn">Lab sheet</button>
+      </div>
+      <div id="boardHost" class="board-host"></div>
+      <div class="status-line" id="statusLine" aria-live="polite"></div>
+      <section class="analyzer" id="analyzer" aria-label="Logic analyzer">
+        <header>
+          <button class="an-toggle" id="anToggle" aria-expanded="true">Logic analyzer</button>
+          <span class="an-hint">Records every change on the clock, P1 and the LEDs</span>
+          <button class="btn btn--sm btn--ghost an-clear" id="anClear">Clear trace</button>
+        </header>
+        <div class="an-body" id="anBody"></div>
+      </section>
+    </section>
+
+    <aside class="bench__side bench__side--right" id="rightPanel" aria-label="Lab sheet and inspector">
+      <div class="panel-tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-rtab="sheet">Lab sheet</button>
+        <button role="tab" aria-selected="false" data-rtab="inspect">Inspect</button>
+        <button role="tab" aria-selected="false" data-rtab="issues">Issues <span class="badge" id="issueBadge" hidden>0</span></button>
+      </div>
+      <div class="panel-body" data-rpane="sheet" id="sheet"></div>
+      <div class="panel-body" data-rpane="inspect" id="inspect" hidden></div>
+      <div class="panel-body" data-rpane="issues" id="issues" hidden></div>
+    </aside>
+  </main>
+
+  <script type="module" src="js/logic-bench.js"></script>
+</body>
+</html>

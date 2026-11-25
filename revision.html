@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Revision sheet · Benchnote</title>
+  <meta name="description" content="Boolean laws, flip-flop characteristic and excitation tables, counters, TTL facts, diode, BJT and op-amp formulas on one printable page.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/guide.css">
+</head>
+<body>
+  <main class="wrap guide">
+    <header class="page-head">
+      <h1>Revision sheet</h1>
+      <p>Everything that tends to come up in a lab viva, on one page. Print it and it fits on two sides of A4.</p>
+    </header>
+    <button class="btn btn--mask print-btn" onclick="window.print()">Print this sheet</button>
+
+    <div class="rev">
+      <article class="rev-card">
+        <h2>Boolean algebra</h2>
+        <dl class="law">
+          <dt>Identity</dt><dd>A + 0 = A</dd><dd>A · 1 = A</dd>
+          <dt>Null</dt><dd>A + 1 = 1</dd><dd>A · 0 = 0</dd>
+          <dt>Idempotent</dt><dd>A + A = A</dd><dd>A · A = A</dd>
+          <dt>Complement</dt><dd>A + A′ = 1</dd><dd>A · A′ = 0</dd>
+          <dt>Involution</dt><dd>(A′)′ = A</dd><dd></dd>
+          <dt>Distributive</dt><dd>A(B + C) = AB + AC</dd><dd>A + BC = (A + B)(A + C)</dd>
+          <dt>Absorption</dt><dd>A + AB = A</dd><dd>A(A + B) = A</dd>
+          <dt>Redundancy</dt><dd>A + A′B = A + B</dd><dd>A(A′ + B) = AB</dd>
+          <dt>De Morgan</dt><dd>(A + B)′ = A′B′</dd><dd>(AB)′ = A′ + B′</dd>
+          <dt>Consensus</dt><dd>AB + A′C + BC = AB + A′C</dd><dd></dd>
+        </dl>
+        <p>Duality: swap + with ·, and 0 with 1, and any true identity stays true.</p>
+      </article>
+
+      <article class="rev-card">
+        <h2>Gates at a glance</h2>
+        <table class="table">
+          <thead><tr><th>Gate</th><th>Y</th><th>Chip</th><th>Output is 1 when</th></tr></thead>
+          <tbody>
+            <tr><td>AND</td><td>AB</td><td>7408</td><td>all inputs 1</td></tr>
+            <tr><td>OR</td><td>A + B</td><td>7432</td><td>any input 1</td></tr>
+            <tr><td>NOT</td><td>A′</td><td>7404</td><td>input 0</td></tr>
+            <tr><td>NAND</td><td>(AB)′</td><td>7400</td><td>any input 0</td></tr>
+            <tr><td>NOR</td><td>(A + B)′</td><td>7402</td><td>all inputs 0</td></tr>
+            <tr><td>XOR</td><td>A ⊕ B</td><td>7486</td><td>odd number of 1s</td></tr>
+            <tr><td>XNOR</td><td>(A ⊕ B)′</td><td>74266</td><td>inputs equal</td></tr>
+          </tbody>
+        </table>
+        <p>NAND and NOR are universal: each can build every other gate. A NAND with its inputs tied is a NOT; NAND–NAND realises any SOP, NOR–NOR any POS.</p>
+      </article>
+
+      <article class="rev-card">
+        <h2>Numbers and codes</h2>
+        <ul>
+          <li>n-bit unsigned: 0 to 2ⁿ − 1. Two's complement: −2ⁿ⁻¹ to 2ⁿ⁻¹ − 1.</li>
+          <li>Two's complement = invert every bit, then add 1. Overflow happens when two numbers of the same sign give a result of the other sign.</li>
+          <li>BCD stores each decimal digit in 4 bits; 1010–1111 are invalid. BCD addition: if a digit sum exceeds 9 or carries, add 0110.</li>
+          <li>Gray code changes one bit per step: G = B ⊕ (B ≫ 1). That is why K-map rows and columns go 00, 01, 11, 10.</li>
+          <li>Excess-3 = BCD + 0011. It is self-complementing.</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>K-maps in brief</h2>
+        <ul>
+          <li>Group 1s for SOP, 0s for POS. Groups are rectangles of 1, 2, 4, 8… cells and may wrap round the edges and corners.</li>
+          <li>Make every group as big as possible, use as few groups as possible, and use don't cares (X) only when they help.</li>
+          <li>A prime implicant cannot grow any bigger. An essential one covers a 1 that no other prime implicant covers.</li>
+          <li>Each group of 2ᵏ cells removes k variables from the term.</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>Combinational blocks</h2>
+        <table class="table mono-cells">
+          <tbody>
+            <tr><td>Half adder</td><td>S = A ⊕ B, C = AB</td></tr>
+            <tr><td>Full adder</td><td>S = A ⊕ B ⊕ Cin, Cout = AB + Cin(A ⊕ B)</td></tr>
+            <tr><td>Half subtractor</td><td>D = A ⊕ B, Bout = A′B</td></tr>
+            <tr><td>Full subtractor</td><td>D = A ⊕ B ⊕ Bin, Bout = A′B + Bin(A ⊕ B)′</td></tr>
+            <tr><td>2:1 MUX</td><td>Y = S′I₀ + SI₁</td></tr>
+            <tr><td>Comparator</td><td>(A = B) = Π (Aᵢ ⊙ Bᵢ)</td></tr>
+          </tbody>
+        </table>
+        <ul>
+          <li>A 2ⁿ:1 MUX needs n select lines and can implement any n-variable function (or n+1 variables with an inverter).</li>
+          <li>A decoder turns n inputs into 2ⁿ outputs, one per minterm. OR the right outputs together to make any function.</li>
+          <li>A priority encoder outputs the index of the highest active input.</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>Flip-flops</h2>
+        <h3>Characteristic equations</h3>
+        <ul>
+          <li>SR: Q⁺ = S + R′Q (SR = 1 forbidden)</li>
+          <li>JK: Q⁺ = JQ′ + K′Q</li>
+          <li>D: Q⁺ = D</li>
+          <li>T: Q⁺ = T ⊕ Q</li>
+        </ul>
+        <h3>Excitation table</h3>
+        <table class="table mono-cells">
+          <thead><tr><th>Q → Q⁺</th><th>S R</th><th>J K</th><th>D</th><th>T</th></tr></thead>
+          <tbody>
+            <tr><td>0 → 0</td><td>0 X</td><td>0 X</td><td>0</td><td>0</td></tr>
+            <tr><td>0 → 1</td><td>1 0</td><td>1 X</td><td>1</td><td>1</td></tr>
+            <tr><td>1 → 0</td><td>0 1</td><td>X 1</td><td>0</td><td>1</td></tr>
+            <tr><td>1 → 1</td><td>X 0</td><td>X 0</td><td>1</td><td>0</td></tr>
+          </tbody>
+        </table>
+        <p>A latch is level-sensitive; a flip-flop acts on a clock edge. Preset and clear are asynchronous and override the clock. JK with J = K = 1 toggles; if it toggles more than once while the clock is high, that is the race-around problem, which edge triggering and master–slave designs avoid.</p>
+      </article>
+
+      <article class="rev-card">
+        <h2>Counters and registers</h2>
+        <ul>
+          <li>A mod-N counter needs ⌈log₂ N⌉ flip-flops.</li>
+          <li>Ripple (asynchronous): each flip-flop clocks the next. Simple but delays add up, so outputs glitch briefly.</li>
+          <li>Synchronous: one clock to all flip-flops; faster, no ripple glitches.</li>
+          <li>Mod-N by reset: decode state N and drive the asynchronous clear (for example a 74161 cleared by NAND(QD, QB) gives mod-10).</li>
+          <li>7490 in BCD mode: QA to CKB, clock into CKA. 7493 as mod-16: same QA to CKB link.</li>
+          <li>Ring counter: N flip-flops, N states. Johnson (twisted ring): N flip-flops, 2N states.</li>
+          <li>Shift registers: SISO, SIPO (74164), PISO, PIPO; the 74194 does all four plus left/right shifting.</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>TTL (74LS) facts</h2>
+        <table class="table mono-cells">
+          <tbody>
+            <tr><td>Supply</td><td>5 V ± 5 %</td></tr>
+            <tr><td>V<sub>IL</sub> max / V<sub>IH</sub> min</td><td>0.8 V / 2.0 V</td></tr>
+            <tr><td>V<sub>OL</sub> max / V<sub>OH</sub> min</td><td>0.5 V / 2.7 V</td></tr>
+            <tr><td>Noise margin</td><td>about 0.3–0.7 V</td></tr>
+            <tr><td>Fan-out (LS to LS)</td><td>about 20</td></tr>
+            <tr><td>Propagation delay</td><td>about 9–10 ns per gate</td></tr>
+          </tbody>
+        </table>
+        <p>A floating TTL input reads HIGH but picks up noise. Open-collector outputs (like the 74266) need a pull-up resistor.</p>
+      </article>
+
+      <article class="rev-card">
+        <h2>Circuit laws</h2>
+        <ul>
+          <li>Ohm: V = IR. Power: P = VI = I²R = V²/R.</li>
+          <li>KCL: currents into a node sum to zero. KVL: voltages round a loop sum to zero.</li>
+          <li>Series: R = R₁ + R₂. Parallel: R = R₁R₂ / (R₁ + R₂). Capacitors combine the other way round.</li>
+          <li>Divider: V<sub>out</sub> = V<sub>in</sub> R₂ / (R₁ + R₂).</li>
+          <li>Thevenin: V<sub>th</sub> is the open-circuit voltage; R<sub>th</sub> is seen with sources zeroed (V shorted, I opened). Norton: I<sub>N</sub> = V<sub>th</sub> / R<sub>th</sub>.</li>
+          <li>Maximum power transfer when R<sub>L</sub> = R<sub>th</sub>.</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>RC, RL, RLC</h2>
+        <ul>
+          <li>τ = RC or L/R. After 1τ a charging capacitor reaches 63 %; after 5τ it is considered done.</li>
+          <li>v<sub>C</sub>(t) = V(1 − e<sup>−t/τ</sup>) charging, V e<sup>−t/τ</sup> discharging.</li>
+          <li>X<sub>C</sub> = 1 / (2πfC), X<sub>L</sub> = 2πfL.</li>
+          <li>First-order cut-off: f<sub>c</sub> = 1 / (2πRC). At f<sub>c</sub> the output is −3 dB (0.707×) with a 45° phase shift.</li>
+          <li>Resonance: f₀ = 1 / (2π√(LC)). Series Q = (1/R)√(L/C). Critical damping at R = 2√(L/C).</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>Diodes and rectifiers</h2>
+        <table class="table mono-cells">
+          <thead><tr><th></th><th>Half-wave</th><th>Centre-tap</th><th>Bridge</th></tr></thead>
+          <tbody>
+            <tr><td>V<sub>dc</sub></td><td>V<sub>m</sub>/π</td><td>2V<sub>m</sub>/π</td><td>2V<sub>m</sub>/π</td></tr>
+            <tr><td>V<sub>rms</sub></td><td>V<sub>m</sub>/2</td><td>V<sub>m</sub>/√2</td><td>V<sub>m</sub>/√2</td></tr>
+            <tr><td>Ripple f</td><td>f</td><td>2f</td><td>2f</td></tr>
+            <tr><td>Ripple factor</td><td>1.21</td><td>0.48</td><td>0.48</td></tr>
+            <tr><td>PIV</td><td>V<sub>m</sub></td><td>2V<sub>m</sub></td><td>V<sub>m</sub></td></tr>
+            <tr><td>Efficiency</td><td>40.6 %</td><td>81.2 %</td><td>81.2 %</td></tr>
+          </tbody>
+        </table>
+        <ul>
+          <li>Silicon diode drop ≈ 0.7 V, germanium ≈ 0.3 V, LED 1.8–3.3 V by colour.</li>
+          <li>With a reservoir capacitor: ripple ΔV ≈ I / (f<sub>r</sub>C), where f<sub>r</sub> is the ripple frequency.</li>
+          <li>Zener regulator: R<sub>s</sub> = (V<sub>in</sub> − V<sub>z</sub>) / (I<sub>z</sub> + I<sub>L</sub>).</li>
+        </ul>
+      </article>
+
+      <article class="rev-card">
+        <h2>BJT</h2>
+        <ul>
+          <li>I<sub>E</sub> = I<sub>C</sub> + I<sub>B</sub>, I<sub>C</sub> = βI<sub>B</sub>, α = β / (β + 1).</li>
+          <li>V<sub>BE</sub> ≈ 0.7 V when on. V<sub>CE(sat)</sub> ≈ 0.2 V.</li>
+          <li>As a switch: pick R<sub>B</sub> so that I<sub>B</sub> is several times I<sub>C</sub>/β, which drives it hard into saturation.</li>
+          <li>Common-emitter small-signal gain ≈ −R<sub>C</sub>/r<sub>e</sub>, with r<sub>e</sub> = 25 mV / I<sub>E</sub>. Output is inverted.</li>
+        </ul>
+        <table class="table">
+          <thead><tr><th>Region</th><th>B–E</th><th>B–C</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td>Cut-off</td><td>reverse</td><td>reverse</td><td>switch off</td></tr>
+            <tr><td>Active</td><td>forward</td><td>reverse</td><td>amplifier</td></tr>
+            <tr><td>Saturation</td><td>forward</td><td>forward</td><td>switch on</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="rev-card">
+        <h2>Op-amps</h2>
+        <p>Ideal: infinite gain and input impedance, zero output impedance. With negative feedback, the two inputs sit at the same voltage (virtual short) and draw no current.</p>
+        <table class="table mono-cells">
+          <tbody>
+            <tr><td>Inverting</td><td>V<sub>o</sub> = −(R<sub>f</sub>/R<sub>in</sub>)V<sub>in</sub></td></tr>
+            <tr><td>Non-inverting</td><td>V<sub>o</sub> = (1 + R<sub>f</sub>/R<sub>g</sub>)V<sub>in</sub></td></tr>
+            <tr><td>Follower</td><td>V<sub>o</sub> = V<sub>in</sub></td></tr>
+            <tr><td>Summing</td><td>V<sub>o</sub> = −R<sub>f</sub>(V₁/R₁ + V₂/R₂ + …)</td></tr>
+            <tr><td>Difference</td><td>V<sub>o</sub> = (R<sub>f</sub>/R₁)(V₂ − V₁), matched resistors</td></tr>
+            <tr><td>Integrator</td><td>V<sub>o</sub> = −(1/RC)∫V<sub>in</sub> dt</td></tr>
+            <tr><td>Differentiator</td><td>V<sub>o</sub> = −RC dV<sub>in</sub>/dt</td></tr>
+          </tbody>
+        </table>
+        <p>No feedback means a comparator: the output swings to whichever rail the input difference points to.</p>
+      </article>
+
+      <article class="rev-card">
+        <h2>Quick viva answers</h2>
+        <ul>
+          <li><strong>Why are NAND and NOR called universal?</strong> Either one alone can build AND, OR and NOT, so any circuit at all.</li>
+          <li><strong>Why does a K-map use Gray order?</strong> So neighbouring cells differ in one variable, which is what lets a group drop it.</li>
+          <li><strong>Latch or flip-flop?</strong> A latch follows its input while enabled; a flip-flop samples only at the clock edge.</li>
+          <li><strong>Why is a ripple counter slow?</strong> Each stage waits for the previous one, so delays add up along the chain.</li>
+          <li><strong>What does an unused TTL input do?</strong> It floats HIGH but is noisy, so tie it to VCC (via a resistor) or to GND, depending on the gate.</li>
+          <li><strong>Why a bleeder or load resistor on a filter capacitor?</strong> It discharges the capacitor once the supply is off.</li>
+        </ul>
+      </article>
+    </div>
+  </main>
+  <script type="module">
+    import { mountChrome, mountFooter } from './js/shared/site.js';
+    mountChrome('revision');
+    mountFooter();
+  </script>
+</body>
+</html>

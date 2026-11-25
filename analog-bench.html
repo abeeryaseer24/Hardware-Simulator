@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analog bench · Benchnote</title>
+  <meta name="description" content="Draw a schematic and watch it run: resistors, capacitors, inductors, diodes, LEDs, Zeners, transistors and op-amps, with meters and a two-channel oscilloscope.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Display:wght@600;700;800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/analog.css">
+</head>
+<body class="is-bench">
+  <main class="bench" id="bench">
+    <aside class="bench__side bench__side--left" aria-label="Circuits and parts">
+      <div class="panel-tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-tab="circuits">Circuits</button>
+        <button role="tab" aria-selected="false" data-tab="parts">Parts</button>
+      </div>
+      <div class="panel-body" data-pane="circuits" id="presetList"></div>
+      <div class="panel-body" data-pane="parts" hidden>
+        <p class="hint">Pick a part, then drag on the grid from one end to the other. A plain click drops a standard-size part.</p>
+        <div id="partList" class="part-list"></div>
+      </div>
+    </aside>
+
+    <section class="bench__stage" id="stage" aria-label="Schematic">
+      <div class="stage-toolbar">
+        <div class="tool-group" role="group" aria-label="Simulation">
+          <button id="runBtn" aria-pressed="true" title="Run or pause (Space)">Pause</button>
+          <button id="resetBtn" title="Restart from the DC operating point">Restart</button>
+          <label class="speed" title="Simulation speed">
+            <span>Speed</span>
+            <input type="range" id="speed" min="-1" max="1" step="0.05" value="0" aria-label="Simulation speed">
+          </label>
+          <span class="sim-time" id="simTime">t = 0</span>
+        </div>
+        <div class="tool-group" role="group" aria-label="Edit">
+          <button id="undoBtn" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+          <button id="redoBtn" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+          <button id="clearBtn">Clear</button>
+        </div>
+        <div class="tool-group" role="group" aria-label="View">
+          <button id="dotsBtn" aria-pressed="true" title="Moving dots show current">Current</button>
+          <button id="voltBtn" aria-pressed="true" title="Colour wires by voltage">Voltage colour</button>
+          <button id="fitBtn" title="Fit circuit to view">Fit</button>
+        </div>
+        <div class="tool-group" role="group" aria-label="File">
+          <button id="shareBtn">Share link</button>
+          <button id="exportBtn">Save</button>
+          <button id="importBtn">Open</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+        <button class="btn btn--gold btn--sm drawer-toggle" id="drawerBtn">Inspector</button>
+      </div>
+      <div id="schHost" class="sch-host"></div>
+      <div class="status-line" id="statusLine" aria-live="polite"></div>
+      <section class="scope" aria-label="Oscilloscope">
+        <canvas id="scope" height="190"></canvas>
+        <div class="scope-side">
+          <div class="scope-ch ch1"><span>CH1</span><b id="ch1Info">—</b></div>
+          <div class="scope-ch ch2"><span>CH2</span><b id="ch2Info">—</b></div>
+          <div class="scope-row">
+            <button class="btn btn--sm scope-btn" id="probe1Btn">Move CH1</button>
+            <button class="btn btn--sm scope-btn" id="probe2Btn">Move CH2</button>
+          </div>
+          <label class="scope-sel">Time/div
+            <select id="tdiv"></select>
+          </label>
+          <label class="scope-sel">Volts/div
+            <select id="vdiv">
+              <option value="auto">Auto</option>
+              <option>0.01</option><option>0.02</option><option>0.05</option><option>0.1</option><option>0.2</option><option>0.5</option><option>1</option><option>2</option><option>5</option><option>10</option>
+            </select>
+          </label>
+        </div>
+      </section>
+    </section>
+
+    <aside class="bench__side bench__side--right" id="rightPanel" aria-label="Inspector">
+      <div class="panel-tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-rtab="inspect">Inspector</button>
+        <button role="tab" aria-selected="false" data-rtab="meters">Readings</button>
+      </div>
+      <div class="panel-body" data-rpane="inspect" id="inspect"></div>
+      <div class="panel-body" data-rpane="meters" id="meters" hidden></div>
+    </aside>
+  </main>
+
+  <script type="module" src="js/analog-bench.js"></script>
+</body>
+</html>
