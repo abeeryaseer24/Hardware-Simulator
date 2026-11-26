@@ -4,11 +4,11 @@
    anything you could read off an instrument. */
 
 :root {
-  /* interaction: solder-mask teal */
-  --brand: #0f5c52;
-  --brand-hi: #13776a;
-  --brand-ink: #083b35;
-  --brand-tint: #e2eeeb;
+  /* interaction + selection: EDA selection blue */
+  --brand: #1f5fae;
+  --brand-hi: #2a73cc;
+  --brand-ink: #0f386b;
+  --brand-tint: #e3ecf7;
   /* measurement / attention: signal amber */
   --accent: #c47f12;
   --accent-hi: #e39a26;
@@ -86,6 +86,9 @@
   --muted: #8b949d;
   --rule: #363c43;
   --rule-strong: #474f58;
+  --brand: #2f74c6;
+  --brand-hi: #4d92e4;
+  --brand-ink: #123b6b;
   --brand-tint: #1a2a3d;
   --accent-tint: #33291a;
   --ok-tint: #17301f;
