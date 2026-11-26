@@ -46,9 +46,9 @@
   --plastic-shade: #cfd5cc;
   --paper: var(--bg);
 
-  --f-body: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --f-display: "Geist", "Segoe UI", system-ui, sans-serif;
-  --f-mono: "Geist Mono", "Cascadia Mono", Consolas, monospace;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
 
   --r-sm: 6px;
   --r-md: 10px;

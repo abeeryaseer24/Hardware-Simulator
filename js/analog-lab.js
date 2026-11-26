@@ -357,7 +357,7 @@ function plotPanel(cols, preferred) {
     const yt = niceTicks(Math.min(0, ...pts.map(p => p[1])), Math.max(...pts.map(p => p[1])));
     const X = (v) => L + (v - xt[0]) / (xt[xt.length - 1] - xt[0]) * (w - L - R);
     const Y = (v) => h - B - (v - yt[0]) / (yt[yt.length - 1] - yt[0]) * (h - T - B);
-    g.font = '10px "Geist Mono", monospace'; g.fillStyle = ink; g.strokeStyle = rule; g.lineWidth = 1;
+    g.font = '10px "IBM Plex Mono", monospace'; g.fillStyle = ink; g.strokeStyle = rule; g.lineWidth = 1;
     for (const v of xt) { g.beginPath(); g.moveTo(X(v), T); g.lineTo(X(v), h - B); g.stroke(); g.textAlign = 'center'; g.fillText(String(v), X(v), h - B + 13); }
     for (const v of yt) { g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(w - R, Y(v)); g.stroke(); g.textAlign = 'right'; g.fillText(String(v), L - 5, Y(v) + 3); }
     g.textAlign = 'center'; g.fillText(AXIS[xKey].label, L + (w - L - R) / 2, h - 4);
@@ -420,7 +420,7 @@ function drawScope(bench, cv) {
     const mx = Math.max(...vs), mn = Math.min(...vs);
     info.push(`CH${k}: ${fmtSI(mx - mn, 'V')} p-p, max ${fmtSI(mx, 'V')}, min ${fmtSI(mn, 'V')}`);
   });
-  g.fillStyle = 'rgba(200,230,215,.75)'; g.font = '11px "Geist Mono", monospace';
+  g.fillStyle = 'rgba(200,230,215,.75)'; g.font = '11px "IBM Plex Mono", monospace';
   g.fillText(`${fmtSI(win / 10, 's')}/div   ${fmtSI(vdiv, 'V')}/div`, 8, 14);
   const inf = cv.parentNode.querySelector('.scope-info');
   if (inf) inf.textContent = info.join('  ·  ') || 'Nothing connected to CH1 or CH2.';

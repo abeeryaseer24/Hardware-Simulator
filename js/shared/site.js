@@ -184,7 +184,7 @@ export function fmtSI(v, unit = '', digits = 3) {
   return v.toExponential(2) + ' ' + unit;
 }
 
-export const FONT_LINK = 'https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap';
+export const FONT_LINK = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap';
 
 // Offline support: store the app on this device after the first visit.
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
