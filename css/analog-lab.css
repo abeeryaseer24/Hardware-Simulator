@@ -126,6 +126,6 @@
 
 /* leg handles and the touch placement preview */
 .lead-handle { fill: rgba(227, 154, 38, .18); stroke: var(--accent-hi); stroke-width: 1.6; pointer-events: none; }
-.lead-handle.is-preview { fill: rgba(61, 142, 240, .2); stroke: #6fb0ff; stroke-dasharray: 3 2; animation: handle-pulse 1.4s ease-in-out infinite; }
+.lead-handle.is-preview { fill: rgba(255, 255, 255, .16); stroke: #fff; stroke-dasharray: 3 2; animation: handle-pulse 1.4s ease-in-out infinite; }
 @keyframes handle-pulse { 50% { stroke-opacity: .45; } }
-.apart.is-preview { opacity: .85; filter: drop-shadow(0 0 4px rgba(111, 176, 255, .9)); }
+.apart.is-preview { opacity: .9; filter: drop-shadow(0 0 4px rgba(227, 154, 38, .9)); }
