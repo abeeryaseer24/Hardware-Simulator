@@ -64,9 +64,9 @@
   --f-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
 
-  --r-sm: 3px;
-  --r-md: 4px;
-  --r-lg: 6px;
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
   --bar-h: 60px;
   --shadow-1: 0 1px 0 rgba(16, 20, 24, .05);
   --shadow-2: 0 10px 30px -14px rgba(16, 20, 24, .35), 0 1px 3px rgba(16, 20, 24, .08);
