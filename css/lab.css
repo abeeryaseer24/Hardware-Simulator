@@ -374,7 +374,11 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
   animation: dock-in .18s ease-out;
 }
 @keyframes dock-in { from { opacity: 0; transform: translate(-50%, 6px); } }
-.dock-txt { display: grid; min-width: 0; margin-right: 4px; line-height: 1.25; }
+.dock-txt { display: grid; flex: 1; min-width: 0; margin-right: 4px; line-height: 1.25; }
+@media (max-width: 760px) {
+  .board-dock { left: 8px; right: 8px; transform: none; max-width: none; animation-name: dock-in-sm; }
+  @keyframes dock-in-sm { from { opacity: 0; transform: translateY(6px); } }
+}
 .dock-txt b { font-size: .84rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dock-txt span { font-family: var(--f-mono); font-size: .68rem; color: #9fb0b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dock-btn {
