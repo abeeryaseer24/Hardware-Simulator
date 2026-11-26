@@ -1,6 +1,6 @@
 // Offline support. Every page and script is stored on the first visit, so the app keeps
 // working with no internet. When online, the newest version always loads first.
-const VERSION = 'bn-4';
+const VERSION = 'bn-5';
 const FILES = [
   "./",
   "about.html",
@@ -47,6 +47,7 @@ const FILES = [
   "js/shared/lab-side.js",
   "js/shared/pinch.js",
   "js/shared/share.js",
+  "js/shared/wide.js",
   "js/shared/site.js",
   "js/toolkit.js",
   "kmap.html",
