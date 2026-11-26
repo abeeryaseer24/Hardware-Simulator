@@ -408,3 +408,35 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
   .pane-label .stage-toolbar::-webkit-scrollbar { display: none; }
   .pane-label .tool-group { flex: none; }
 }
+
+/* wide workbench: board and side panel fill the screen, side by side */
+body.has-full { overflow: hidden; }
+.lab-view.is-bench.is-full {
+  position: fixed; inset: 0; z-index: 90;
+  width: 100vw; height: 100vh; height: 100dvh;
+  display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr);
+  overflow: hidden; background: var(--stage);
+}
+.lab-view.is-full .stages.split { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }
+.lab-view.is-full .pane-ref { display: none; }
+.lab-view.is-full .lab-panel { max-height: none; min-height: 0; border-top: 0; border-left: 1px solid var(--rule-strong); }
+.lab-view.is-full .toast-host { position: absolute; }
+@media (max-width: 760px), (max-height: 500px) {
+  .lab-view.is-bench.is-full { grid-template-columns: minmax(0, 1fr) 240px; }
+  .lab-view.is-full .pane-label { padding: 4px 8px; }
+  .lab-view.is-full .pane-label > span:first-child { display: none; }
+  .lab-view.is-full .status-line { min-height: 22px; padding-top: 2px; padding-bottom: 2px; }
+  .lab-view.is-full .panel-body { padding: 10px; }
+}
+/* still upright: board on top, parts below, and a nudge to turn the phone */
+@media (orientation: portrait) and (max-width: 760px) {
+  .lab-view.is-bench.is-full { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 38vh; }
+  .lab-view.is-full .lab-panel { border-left: 0; border-top: 1px solid var(--rule-strong); }
+  .lab-view.is-full .board-host::before {
+    content: 'Turn your phone sideways for a wider board';
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 4;
+    padding: 5px 10px; border-radius: var(--r-md); white-space: nowrap;
+    background: rgba(10, 13, 15, .9); color: var(--silk); font-size: .74rem; pointer-events: none;
+  }
+}
+.tb-wide[aria-pressed="true"] { background: var(--accent-hi) !important; color: #1a1103 !important; }
