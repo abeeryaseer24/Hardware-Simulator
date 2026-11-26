@@ -16,24 +16,31 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/home.css">
 </head>
-<body>
+<body class="page-home">
   <main>
     <section class="hero">
-      <div class="wrap hero__grid">
-        <div class="hero__copy">
-          <h1>A free breadboard for every circuit you want to try.</h1>
-          <p class="hero__lede">Benchnote gives every electrical and electronic engineering student a virtual lab bench: a digital trainer with real 74-series chips and an analog trainer with a power supply, function generator, meters and an oscilloscope. Place parts, drag wires and test any circuit you like, free, on a laptop or a phone. Common lab experiments come already built as examples, so you can see one wired before you try it yourself.</p>
-          <div class="hero__cta">
-            <a class="btn btn--primary btn--lg" href="practice.html">Start practising</a>
-            <a class="btn btn--lg" href="digital.html">Digital lab</a>
-            <a class="btn btn--lg" href="analog.html">Analog lab</a>
-          </div>
+      <div class="hero__light" aria-hidden="true"></div>
+      <div class="wrap hero__stage">
+        <p class="hero__eyebrow"><span class="hero__dot" aria-hidden="true"></span>Virtual EEE lab bench</p>
+        <h1>A free breadboard for every circuit you want to try.</h1>
+        <p class="hero__lede">Real 74-series chips, a power supply, function generator, meters and an oscilloscope. Free, on a laptop or a phone.</p>
+        <div class="hero__cta">
+          <a class="btn-glass" href="practice.html">Start practising<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+          <a class="hero__link" href="digital.html">Digital lab</a>
+          <a class="hero__link" href="analog.html">Analog lab</a>
         </div>
+      </div>
+      <div class="wrap hero__device">
         <figure class="demo" aria-label="Try a logic gate">
           <div id="demo"></div>
           <figcaption>Flip A and B. Click the chip to change the gate.</figcaption>
         </figure>
       </div>
+    </section>
+
+    <section class="wrap intro" aria-label="About Benchnote">
+      <p class="intro__label">What it is</p>
+      <p class="intro__text">Benchnote gives every electrical and electronic engineering student a virtual lab bench: a digital trainer with real 74-series chips and an analog trainer with a power supply, function generator, meters and an oscilloscope. Place parts, drag wires and test any circuit you like. Common lab experiments come already built as examples, so you can see one wired before you try it yourself.</p>
     </section>
 
     <section class="wrap entry" aria-label="Sections">
