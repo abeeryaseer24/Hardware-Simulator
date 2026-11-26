@@ -441,3 +441,11 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
   background: var(--surface-2); border-bottom: 1px solid var(--rule);
   border-left: 3px solid var(--brand-hi); color: var(--ink-2);
 }
+
+/* experiment list reads as a project tree */
+.side-head { margin: 10px -12px 4px; padding: 6px 20px; background: var(--surface-3); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); color: var(--ink-2); }
+.side-group ul { margin-left: 12px; padding-left: 8px; border-left: 1px dotted var(--rule-strong); }
+.side-item { border-left-width: 0; padding-left: 10px; position: relative; }
+.side-item::before { content: ''; position: absolute; left: -8px; top: 50%; width: 7px; border-top: 1px dotted var(--rule-strong); }
+.side-item:hover { box-shadow: inset 2px 0 0 var(--ink-2); }
+.side-item.is-active { box-shadow: inset 2px 0 0 var(--brand-hi), 0 0 0 1px var(--rule); }
