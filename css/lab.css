@@ -400,3 +400,11 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
   .panel-tabs button { padding: 13px 4px 12px; }
   .swatch { width: 30px; height: 30px; }
 }
+
+/* phone: keep the board toolbar on one swipeable row */
+@media (max-width: 760px) {
+  .pane-label .pane-tools { flex: 1 1 100%; min-width: 0; margin-left: 0; }
+  .pane-label .stage-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .pane-label .stage-toolbar::-webkit-scrollbar { display: none; }
+  .pane-label .tool-group { flex: none; }
+}
