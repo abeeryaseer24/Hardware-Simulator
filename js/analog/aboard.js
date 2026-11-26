@@ -604,7 +604,9 @@ export class AnalogBoard {
     }
     const name = (spec) => {
       const nm = PARTS[spec.type]?.name || spec.type;
-      return spec.type === 'IC' || isDip(spec.type) ? (spec.chip || nm) : `${partLabel({ ...spec })} ${nm.toLowerCase()}`.trim();
+      if (spec.type === 'IC' || isDip(spec.type)) return spec.chip || nm;
+      const lab = partLabel({ ...spec });
+      return lab.toLowerCase().includes(nm.toLowerCase()) ? lab : `${lab} ${nm.toLowerCase()}`.trim();
     };
     const btn = (a, label, cls = '') => `<button type="button" class="dock-btn ${cls}" data-dock="${a}">${label}</button>`;
     let html = '';
