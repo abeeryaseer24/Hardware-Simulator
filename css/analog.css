@@ -52,9 +52,9 @@ body.is-bench { overflow: hidden; }
 .sym { fill: none; stroke: #e7efe9; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
 .sym.thin { stroke-width: 1.6; }
 .sym.plate { stroke-width: 3.2; }
-.sym.ring { fill: rgba(10, 42, 33, .9); }
+.sym.ring { fill: rgba(14, 20, 22, .92); }
 .sym.fillsym { fill: #e7efe9; }
-.sym.oa-body { fill: rgba(10, 42, 33, .9); }
+.sym.oa-body { fill: rgba(14, 20, 22, .92); }
 .sym.lever { stroke-width: 2.6; }
 .pm { fill: #e7efe9; font: 700 11px var(--f-body); text-anchor: middle; }
 .pm.big { font-size: 15px; }

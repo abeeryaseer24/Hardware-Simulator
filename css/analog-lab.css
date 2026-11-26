@@ -87,7 +87,7 @@
 .schem .sc-s.thick { stroke-width: 3.2; }
 .schem .sc-s.thin { stroke-width: 1.6; }
 .schem .sc-s.fill { fill: #e7efe9; }
-.schem .sc-s.fillbg { fill: #0e1f19; }
+.schem .sc-s.fillbg { fill: var(--stage); }
 .schem .sc-pm { fill: #e7efe9; font: 700 11px var(--f-body); text-anchor: middle; }
 .schem .sc-pm.big { font-size: 15px; }
 .schem .sc-letter { fill: #e7efe9; font: 700 14px var(--f-body); text-anchor: middle; }
