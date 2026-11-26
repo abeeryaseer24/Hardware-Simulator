@@ -1,6 +1,7 @@
 /* Home — a dark, quiet landing: one lit frame, one call to action, the live demo as the screen */
 
-body.page-home {
+/* dark theme only: the light theme uses the shared porcelain palette */
+:root[data-theme="dark"] body.page-home {
   --bg: #05090b;
   --surface: #0a1013;
   --surface-2: #0d1417;
@@ -19,7 +20,7 @@ body.page-home {
 /* the bar floats over the hero */
 .page-home .bar {
   position: fixed; left: 0; right: 0;
-  background: rgba(5, 9, 11, .55);
+  background: var(--bar-bg);
   backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
   border-bottom: 1px solid rgba(255, 255, 255, .06);
@@ -74,16 +75,16 @@ body.page-home {
   display: inline-flex; align-items: center; gap: 10px;
   margin: 0 0 22px;
   font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
-  color: #8fb3ad;
+  color: var(--label);
 }
 .hero__dot { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--glow)); box-shadow: 0 0 10px rgba(var(--glow), .9); }
 .hero h1 {
   max-width: 15ch; margin: 0 auto .42em;
   font-size: clamp(2.4rem, 5.4vw, 4.2rem);
   font-weight: 500; line-height: 1.04; letter-spacing: -0.035em;
-  color: #f1f5f6;
+  color: var(--ink);
 }
-.hero__lede { max-width: 50ch; margin: 0 auto 34px; font-size: 1.06rem; line-height: 1.65; color: #9eaeb3; }
+.hero__lede { max-width: 50ch; margin: 0 auto 34px; font-size: 1.06rem; line-height: 1.65; color: var(--ink-2); }
 .hero__cta { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 8px; }
 
 /* glass button with a hairline of light underneath */
@@ -94,7 +95,7 @@ body.page-home {
   border-radius: 0;
   border: 1px solid rgba(255, 255, 255, .22);
   background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02));
-  color: #fff; font-size: .95rem; font-weight: 500; text-decoration: none;
+  color: var(--ink); font-size: .95rem; font-weight: 500; text-decoration: none;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 12px 30px -14px rgba(0, 0, 0, .9);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   transition: border-color .2s, background-color .2s;
@@ -106,8 +107,8 @@ body.page-home {
 .btn-glass svg { transition: transform .2s; }
 .btn-glass:hover { border-color: rgba(255, 255, 255, .38); background-color: rgba(255, 255, 255, .05); }
 .btn-glass:hover svg { transform: translateX(2px); }
-.hero__link { padding: 10px 12px; color: #9eaeb3; font-size: .95rem; text-decoration: none; transition: color .2s; }
-.hero__link:hover { color: #fff; }
+.hero__link { padding: 10px 12px; color: var(--ink-2); font-size: .95rem; text-decoration: none; transition: color .2s; }
+.hero__link:hover { color: var(--ink); }
 
 /* the live demo, rising out of the hero like a screen */
 .hero__device { display: flex; justify-content: center; padding-top: 60px; }
@@ -126,10 +127,10 @@ body.page-home {
 /* ---------- intro ---------- */
 .intro { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 18px 48px; padding: 96px 0 36px; }
 .intro__label, .entry__card::before {
-  font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: #61807b;
+  font-family: var(--f-mono); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--label);
 }
 .intro__label { margin: .55em 0 0; }
-.intro__text { max-width: 48ch; margin: 0; font-size: clamp(1.15rem, 1.9vw, 1.5rem); line-height: 1.6; letter-spacing: -0.008em; color: #c6d1d4; }
+.intro__text { max-width: 48ch; margin: 0; font-size: clamp(1.15rem, 1.9vw, 1.5rem); line-height: 1.6; letter-spacing: -0.008em; color: var(--ink-2); }
 
 /* ---------- sections: one sheet split by hairlines ---------- */
 .entry {
@@ -150,10 +151,10 @@ body.page-home {
 }
 .entry__card::before { content: counter(e, decimal-leading-zero); margin-bottom: 26px; }
 .entry__card:hover { background: #0a1215; box-shadow: inset 0 1px 0 rgba(var(--glow), .7); }
-.entry__icon { display: block; margin-bottom: 14px; color: #7cc7bb; }
+.entry__icon { display: block; margin-bottom: 14px; color: rgb(var(--glow)); }
 .entry__icon svg { width: 22px; height: 22px; }
-.entry__title { font-size: 1.05rem; font-weight: 500; letter-spacing: -0.01em; color: #eef3f4; margin-bottom: 6px; }
-.entry__text { font-size: .9rem; line-height: 1.55; color: #869599; }
+.entry__title { font-size: 1.05rem; font-weight: 500; letter-spacing: -0.01em; color: var(--ink); margin-bottom: 6px; }
+.entry__text { font-size: .9rem; line-height: 1.55; color: var(--muted); }
 
 .entry__card--main {
   grid-column: 1 / -1;
@@ -171,7 +172,7 @@ body.page-home {
   display: inline-flex; align-items: center; height: 44px; padding: 0 20px;
   border-radius: 0; border: 1px solid rgba(255, 255, 255, .22);
   background: linear-gradient(180deg, rgba(255, 255, 255, .08), rgba(255, 255, 255, .02));
-  color: #fff; font-size: .92rem; font-weight: 500; white-space: nowrap;
+  color: var(--ink); font-size: .92rem; font-weight: 500; white-space: nowrap;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
   transition: border-color .2s;
 }
@@ -247,7 +248,6 @@ body.page-home {
 .d-tt td:last-child { border-left: 1px solid #3a5463; }
 
 /* ---------- glass: frosted panes with light behind them, square edges ---------- */
-.page-home { --glass: rgba(255, 255, 255, .045); --glass-hi: rgba(255, 255, 255, .075); --glass-edge: rgba(255, 255, 255, .13); }
 
 /* light shapes behind the hero frame so the frosting has something to blur */
 .hero__stage { isolation: isolate; background: var(--glass); -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%); }
@@ -292,3 +292,14 @@ body.page-home {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 20px 50px -30px rgba(0, 0, 0, .9);
 }
 .entry__card:hover { background: var(--glass-hi); border-color: rgba(255, 255, 255, .2); box-shadow: inset 0 1px 0 rgba(var(--glow), .8), 0 20px 50px -30px rgba(0, 0, 0, .9); }
+
+/* ---------- light theme: porcelain glass; the demo stays a dark screen ---------- */
+:root[data-theme="light"] .hero__stage::before {
+  background: linear-gradient(90deg, rgba(var(--glow), .8), rgba(12, 22, 26, .1) 22%, rgba(12, 22, 26, .08) 78%, rgba(var(--glow), .8));
+}
+:root[data-theme="light"] .hero { background: radial-gradient(900px 420px at 50% -8%, rgba(255, 255, 255, .9), transparent 70%), var(--bg); border-bottom-color: var(--glass-edge); }
+:root[data-theme="light"] .hero__light { background: radial-gradient(closest-side, rgba(var(--glow), .28), rgba(var(--glow), .08) 55%, transparent 78%); }
+:root[data-theme="light"] :is(.btn-glass, .entry__go)::after { background: linear-gradient(90deg, transparent, rgba(var(--glow), 1), transparent); }
+:root[data-theme="light"] .hero__dot { box-shadow: 0 0 8px rgba(var(--glow), .7); }
+:root[data-theme="light"] .demo { background: rgba(9, 15, 18, .9); border-color: rgba(12, 22, 26, .25); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 -30px 80px -40px rgba(var(--glow), .55), 0 30px 60px -30px rgba(12, 22, 26, .4); }
+:root[data-theme="light"] .credit, :root[data-theme="light"] .page-home .footer { border-top-color: var(--glass-edge); }
