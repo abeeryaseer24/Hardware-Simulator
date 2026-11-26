@@ -263,8 +263,11 @@ kbd {
 .btn:hover { background: var(--surface-2); border-color: #9aa2aa; }
 .btn:active { transform: translateY(1px); box-shadow: none; }
 .btn svg { width: 16px; height: 16px; }
-.btn--primary, .btn--mask { background: var(--brand); border-color: var(--brand-ink); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
-.btn--primary:hover, .btn--mask:hover { background: var(--brand-hi); border-color: var(--brand-ink); }
+/* primary action = signal amber (run / place / start); selection stays blue */
+.btn--primary { background: var(--accent-hi); border-color: var(--gold-deep); color: #1a1103; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3); }
+.btn--primary:hover { background: #f0ab3a; border-color: var(--gold-deep); }
+.btn--mask { background: var(--brand); border-color: var(--brand-ink); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+.btn--mask:hover { background: var(--brand-hi); border-color: var(--brand-ink); }
 .btn--gold { background: var(--accent); border-color: var(--gold-deep); color: #1c1203; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25); }
 .btn--gold:hover { background: var(--accent-hi); border-color: var(--gold-deep); }
 .btn--ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--ink-2); }
