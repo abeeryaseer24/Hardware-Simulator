@@ -76,27 +76,31 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: #0c0f11;
-  --surface: #13171a;
-  --surface-2: #191e22;
-  --surface-3: #21272c;
-  --ink: #e4e8eb;
-  --ink-2: #bcc4ca;
-  --muted: #869099;
-  --rule: #252b30;
-  --rule-strong: #343c43;
-  --brand-hi: #2a9c8b;
-  --brand-tint: #10251f;
-  --accent-tint: #2a2213;
-  --ok-tint: #0f2619;
-  --warn-tint: #2a200f;
-  --bad-tint: #2c1416;
-  --chrome: #0f1215;
-  --chrome-2: #171b1f;
-  --chrome-rule: #232a30;
+  /* EDA workspace: neutral mid-dark greys, panels a step lighter than the sheet */
+  --bg: #1c1f23;
+  --surface: #24282d;
+  --surface-2: #2b3036;
+  --surface-3: #343a41;
+  --ink: #e4e7ea;
+  --ink-2: #b9c0c7;
+  --muted: #8b949d;
+  --rule: #363c43;
+  --rule-strong: #474f58;
+  --brand-tint: #1a2a3d;
+  --accent-tint: #33291a;
+  --ok-tint: #17301f;
+  --warn-tint: #33281a;
+  --bad-tint: #3a1d1f;
+  --chrome: #141619;
+  --chrome-2: #1d2024;
+  --chrome-rule: #2c3136;
+  --stage: #121b24;
+  --stage-2: #18222c;
   --plastic: #d9ded6;
   --plastic-shade: #bcc3ba;
   --low: #5b8be0;
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, .25);
+  --shadow-2: 0 14px 34px -14px rgba(0, 0, 0, .7), 0 1px 3px rgba(0, 0, 0, .4);
   color-scheme: dark;
 }
 
