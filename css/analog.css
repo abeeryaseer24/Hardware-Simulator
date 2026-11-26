@@ -174,3 +174,7 @@ body.is-bench { overflow: hidden; }
 .panel-tabs button { border: 1px solid transparent; border-bottom: 0; border-top: 2px solid transparent; border-radius: var(--r-sm) var(--r-sm) 0 0; margin-bottom: -1px; padding-top: 9px; }
 .panel-tabs button:hover { background: color-mix(in srgb, var(--surface) 55%, transparent); }
 .panel-tabs button[aria-selected="true"] { background: var(--surface); border-color: var(--rule-strong); border-top-color: var(--brand-hi); border-bottom: 1px solid var(--surface); }
+
+/* status bar, EDA style: a marker, then the live readout in amber mono */
+.status-line { color: #f0c27a; opacity: 1; background: #0b0f13; border-top: 1px solid #000; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05); padding-left: 26px; position: relative; }
+.status-line::before { content: ''; position: absolute; left: 11px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 1px; background: var(--accent-hi); box-shadow: 0 0 6px rgba(227, 154, 38, .6); }
