@@ -245,3 +245,50 @@ body.page-home {
 .d-tt th { color: #8ea6b2; font-weight: 500; }
 .d-tt tr.now td { background: rgba(224, 173, 44, .22); color: #fff; }
 .d-tt td:last-child { border-left: 1px solid #3a5463; }
+
+/* ---------- glass: frosted panes with light behind them, square edges ---------- */
+.page-home { --glass: rgba(255, 255, 255, .045); --glass-hi: rgba(255, 255, 255, .075); --glass-edge: rgba(255, 255, 255, .13); }
+
+/* light shapes behind the hero frame so the frosting has something to blur */
+.hero__stage { isolation: isolate; background: var(--glass); -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%); }
+.hero::before {
+  content: ''; position: absolute; z-index: -2; pointer-events: none;
+  left: 50%; top: 18%; width: 980px; height: 420px; transform: translateX(-50%);
+  background:
+    radial-gradient(closest-side at 22% 40%, rgba(var(--glow), .30), transparent 70%),
+    radial-gradient(closest-side at 80% 65%, rgba(var(--glow), .18), transparent 70%);
+  filter: blur(20px);
+}
+.hero__stage::after { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 0 90px rgba(var(--glow), .06); }
+
+.btn-glass, .entry__go {
+  background: var(--glass-hi);
+  border-color: var(--glass-edge);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 14px 34px -16px rgba(0, 0, 0, .9);
+}
+.btn-glass:hover, .entry__card--main:hover .entry__go { background: rgba(255, 255, 255, .11); border-color: rgba(255, 255, 255, .3); }
+
+.demo {
+  background: rgba(10, 17, 20, .72);
+  border-color: var(--glass-edge);
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 -40px 90px -50px rgba(var(--glow), .6);
+}
+
+/* sections: separate frosted panes floating over a soft light */
+.entry { position: relative; isolation: isolate; gap: 14px; background: none; border: 0; overflow: visible; }
+.entry::before {
+  content: ''; position: absolute; z-index: -1; inset: -40px -20px; pointer-events: none;
+  background:
+    radial-gradient(closest-side at 18% 30%, rgba(var(--glow), .22), transparent 75%),
+    radial-gradient(closest-side at 85% 80%, rgba(var(--glow), .14), transparent 75%);
+  filter: blur(30px);
+}
+.entry__card, .entry__card--main {
+  background: var(--glass);
+  border: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: blur(24px) saturate(170%); backdrop-filter: blur(24px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 20px 50px -30px rgba(0, 0, 0, .9);
+}
+.entry__card:hover { background: var(--glass-hi); border-color: rgba(255, 255, 255, .2); box-shadow: inset 0 1px 0 rgba(var(--glow), .8), 0 20px 50px -30px rgba(0, 0, 0, .9); }
