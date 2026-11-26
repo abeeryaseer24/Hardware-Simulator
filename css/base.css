@@ -1,39 +1,53 @@
-/* Benchnote design system */
+/* Benchnote design system — instrument panel
+   Graphite chrome, solder-mask teal for interaction, signal amber for
+   live/measured values. IBM Plex Sans for the interface, Plex Mono for
+   anything you could read off an instrument. */
 
 :root {
-  --brand: #0d5c44;
-  --brand-hi: #127a5a;
-  --brand-ink: #073a2b;
-  --brand-tint: #e6f2ed;
-  --accent: #c8961e;
-  --accent-hi: #e0ad2c;
-  --accent-tint: #fbf3df;
+  /* interaction: solder-mask teal */
+  --brand: #0f5c52;
+  --brand-hi: #13776a;
+  --brand-ink: #083b35;
+  --brand-tint: #e2eeeb;
+  /* measurement / attention: signal amber */
+  --accent: #c47f12;
+  --accent-hi: #e39a26;
+  --accent-tint: #f9f0e0;
 
-  --bg: #f5f6f4;
-  --surface: #ffffff;
-  --surface-2: #f0f2ef;
-  --surface-3: #e6e9e5;
-  --ink: #0f1814;
-  --ink-2: #3a4741;
-  --muted: #66736c;
-  --rule: #e1e5e1;
-  --rule-strong: #cbd2cc;
+  /* graphite neutrals */
+  --bg: #e9ecee;
+  --surface: #fbfcfc;
+  --surface-2: #f2f4f5;
+  --surface-3: #e3e7ea;
+  --ink: #101418;
+  --ink-2: #39424a;
+  --muted: #646e77;
+  --rule: #d5dadf;
+  --rule-strong: #b6bdc4;
 
-  --stage: #0c1d17;
-  --stage-2: #12291f;
-  --silk: #e9f1ec;
+  /* application chrome (top bar) */
+  --chrome: #15191d;
+  --chrome-2: #1d2227;
+  --chrome-rule: #2b3238;
+  --chrome-ink: #e6eaed;
+  --chrome-muted: #98a2ab;
+
+  /* dark work surfaces */
+  --stage: #0e1416;
+  --stage-2: #151d20;
+  --silk: #e6ecee;
 
   --high: #e5383b;
   --low: #2f62c4;
   --float: #98a39d;
   --ch1: #f2c40f;
   --ch2: #23b5c9;
-  --ok: #1e8a52;
-  --ok-tint: #e5f4ea;
-  --warn: #b7720f;
-  --warn-tint: #fbf0dc;
-  --bad: #c43036;
-  --bad-tint: #fbe7e7;
+  --ok: #1d7f4d;
+  --ok-tint: #e3f1e8;
+  --warn: #a8670b;
+  --warn-tint: #f8eedb;
+  --bad: #bd2f35;
+  --bad-tint: #f8e5e5;
 
   /* aliases used by the simulator styles */
   --mask: var(--brand);
@@ -41,7 +55,7 @@
   --mask-mid: var(--brand-hi);
   --gold: var(--accent);
   --gold-hi: var(--accent-hi);
-  --gold-deep: #9c7414;
+  --gold-deep: #94600c;
   --plastic: #e7eae4;
   --plastic-shade: #cfd5cc;
   --paper: var(--bg);
@@ -50,31 +64,36 @@
   --f-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
 
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
+  --r-sm: 3px;
+  --r-md: 4px;
+  --r-lg: 6px;
   --bar-h: 60px;
-  --shadow-1: 0 1px 2px rgba(15, 24, 20, .06), 0 1px 1px rgba(15, 24, 20, .04);
-  --shadow-2: 0 8px 28px -12px rgba(15, 24, 20, .28), 0 2px 6px rgba(15, 24, 20, .06);
+  --shadow-1: 0 1px 0 rgba(16, 20, 24, .05);
+  --shadow-2: 0 10px 30px -14px rgba(16, 20, 24, .35), 0 1px 3px rgba(16, 20, 24, .08);
   --shadow-lift: var(--shadow-2);
+  --focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand-hi);
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --bg: #0b1310;
-  --surface: #111b17;
-  --surface-2: #16221d;
-  --surface-3: #1d2b25;
-  --ink: #e8efeb;
-  --ink-2: #c1ccc6;
-  --muted: #8b9a92;
-  --rule: #22312a;
-  --rule-strong: #2f4038;
-  --brand-tint: #12291f;
-  --accent-tint: #2a2412;
-  --ok-tint: #10291b;
-  --warn-tint: #2c220f;
-  --bad-tint: #2e1415;
+  --bg: #0c0f11;
+  --surface: #13171a;
+  --surface-2: #191e22;
+  --surface-3: #21272c;
+  --ink: #e4e8eb;
+  --ink-2: #bcc4ca;
+  --muted: #869099;
+  --rule: #252b30;
+  --rule-strong: #343c43;
+  --brand-hi: #2a9c8b;
+  --brand-tint: #10251f;
+  --accent-tint: #2a2213;
+  --ok-tint: #0f2619;
+  --warn-tint: #2a200f;
+  --bad-tint: #2c1416;
+  --chrome: #0f1215;
+  --chrome-2: #171b1f;
+  --chrome-rule: #232a30;
   --plastic: #d9ded6;
   --plastic-shade: #bcc3ba;
   --low: #5b8be0;
