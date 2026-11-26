@@ -4,6 +4,7 @@ import { AnalogTrainer } from './atrainer.js';
 import { AnalogBoard } from './aboard.js';
 import { shareCircuit, SHARE_ICON } from '../shared/share.js';
 import { wideButton } from '../shared/wide.js';
+import { lockButton } from '../shared/viewlock.js';
 
 const benches = new Set();
 let last = performance.now();
@@ -146,6 +147,7 @@ export function aBenchToolbar(bench, { editable }) {
     b('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M8 11h6M16 16l4.5 4.5"/></svg>', 'Zoom out', () => bench.board.zoom(1.25)),
     b('Board', 'Zoom to the breadboard', () => bench.board.focusBreadboard()),
     b('Whole kit', 'Show the whole trainer', () => bench.board.fit()),
+    lockButton(),
   ), el('div', { class: 'tool-group' }, b('Labels', 'Show part names and values', (e) => {
     bench.board.showLabels = !bench.board.showLabels;
     e.currentTarget.setAttribute('aria-pressed', String(bench.board.showLabels));
