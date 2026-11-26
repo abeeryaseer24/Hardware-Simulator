@@ -433,3 +433,11 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
 /* status bar, EDA style: a marker, then the live readout in amber mono */
 .status-line { color: #f0c27a; opacity: 1; background: #0b0f13; border-top: 1px solid #000; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05); padding-left: 26px; position: relative; }
 .status-line::before { content: ''; position: absolute; left: 11px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 1px; background: var(--accent-hi); box-shadow: 0 0 6px rgba(227, 154, 38, .6); }
+
+/* overview cards get a panel caption bar across the top */
+.ov-card { padding-top: 0; border-top-width: 1px; overflow: hidden; }
+.ov-card > h2:first-child {
+  margin: 0 -20px 14px; padding: 7px 20px 7px 17px;
+  background: var(--surface-2); border-bottom: 1px solid var(--rule);
+  border-left: 3px solid var(--brand-hi); color: var(--ink-2);
+}
