@@ -408,9 +408,3 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
   .pane-label .stage-toolbar::-webkit-scrollbar { display: none; }
   .pane-label .tool-group { flex: none; }
 }
-
-/* docked panel tabs, IDE style: the active tab opens onto the panel below */
-.panel-tabs { background: var(--surface-3); padding: 4px 4px 0; gap: 2px; border-bottom: 1px solid var(--rule-strong); }
-.panel-tabs button { border: 1px solid transparent; border-bottom: 0; border-top: 2px solid transparent; border-radius: var(--r-sm) var(--r-sm) 0 0; margin-bottom: -1px; padding-top: 9px; }
-.panel-tabs button:hover { background: color-mix(in srgb, var(--surface) 55%, transparent); }
-.panel-tabs button[aria-selected="true"] { background: var(--surface); border-color: var(--rule-strong); border-top-color: var(--brand-hi); border-bottom: 1px solid var(--surface); }
