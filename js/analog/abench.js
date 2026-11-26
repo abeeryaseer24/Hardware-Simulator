@@ -3,6 +3,7 @@ import { el } from '../shared/site.js';
 import { AnalogTrainer } from './atrainer.js';
 import { AnalogBoard } from './aboard.js';
 import { shareCircuit, SHARE_ICON } from '../shared/share.js';
+import { wideButton } from '../shared/wide.js';
 
 const benches = new Set();
 let last = performance.now();
@@ -156,6 +157,7 @@ export function aBenchToolbar(bench, { editable }) {
       b('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>', 'Redo (Ctrl+Y)', () => bench.doRedo()),
       b('Clear', 'Remove every part and wire', () => bench.clear())));
     groups.push(el('div', { class: 'tool-group' }, b(SHARE_ICON + '<span>Share</span>', 'Send this circuit to a friend as a link', () => shareCircuit(bench.t.serialize(), 'My circuit'), { class: 'tb-share' })));
+    groups.push(el('div', { class: 'tool-group' }, wideButton(bench.board.svg, () => bench.board.focusBreadboard())));
   }
   return el('div', { class: 'stage-toolbar' }, ...groups);
 }
