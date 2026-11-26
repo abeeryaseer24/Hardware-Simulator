@@ -1,6 +1,7 @@
 // Breadboard trainer renderer + pointer interaction.
 import { svg } from '../shared/site.js';
 import { addPinch } from '../shared/pinch.js';
+import { addViewControls } from '../shared/viewlock.js';
 import { CHIPS } from './chips.js';
 import {
   P, COLS, VIEW, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, PADS,
@@ -312,18 +313,16 @@ export class Board {
     this.resetGesture = () => { down = null; this.pending = null; this.renderOverlay(); };
     addPinch(this);
 
-    s.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const p = this.toSvg(e);
-      this.zoom(e.deltaY > 0 ? 1.12 : 1 / 1.12, p.x, p.y);
-    }, { passive: false });
+    addViewControls(this);
 
     s.addEventListener('pointerdown', (e) => {
       if (e.button === 2) return;
       const p = this.toSvg(e);
       const act = e.target.closest?.('[data-act]');
       if (act) { this.control(act.dataset.act, true); down = { act: act.dataset.act }; e.preventDefault(); return; }
-      down = { x: e.clientX, y: e.clientY, p, moved: false, vb: { ...this.vb }, id: e.pointerId };
+      down = { x: e.clientX, y: e.clientY, lastY: e.clientY, p, moved: false, vb: { ...this.vb }, id: e.pointerId, touch: e.pointerType === 'touch' || e.pointerType === 'pen' };
+      // Space + drag or the middle button always moves the board, locked or not
+      if (this.forcePan(e)) { e.preventDefault(); down.force = true; s.setPointerCapture(e.pointerId); return; }
       if (this.readonly) { s.setPointerCapture(e.pointerId); return; }
       const chip = this.mode === 'wire' ? this.hitChip(p.x, p.y) : null;
       const pt = this.hitPoint(p.x, p.y);
@@ -341,7 +340,11 @@ export class Board {
         const dx = e.clientX - down.x, dy = e.clientY - down.y;
         if (!down.moved && dx * dx + dy * dy > 25) down.moved = true;
         if (down.moved) {
-          if (down.chip) {
+          if (down.force) {
+            const r = this.svg.getBoundingClientRect(), k = down.vb.w / r.width;
+            this.vb.x = down.vb.x - dx * k; this.vb.y = down.vb.y - dy * k;
+            this.applyView();
+          } else if (down.chip) {
             const nc = Math.round((p.x - down.p.x) / P) + down.chipCol;
             if (nc !== down.chip.col && this.t.canPlaceChip(down.chip.type, nc, down.chip.id)) {
               down.chip.col = nc;
@@ -350,13 +353,17 @@ export class Board {
             }
           } else if (down.pt) {
             if (!this.pending) this.pending = down.pt;
-          } else {
+          } else if (this.dragPans()) {
             const r = this.svg.getBoundingClientRect();
             const k = down.vb.w / r.width;
             this.vb.x = down.vb.x - dx * k;
             this.vb.y = down.vb.y - dy * k;
             this.applyView();
-          }
+          } else if (down.touch) {
+            // locked: a one-finger swipe scrolls the page, the board stays where it is
+            this.lockedTouchScroll(down.lastY - e.clientY);
+            down.lastY = e.clientY;
+          } else this.lockedHint();
         }
       }
       this.onHover(p, e.target);
@@ -365,6 +372,7 @@ export class Board {
     const finish = (e) => {
       if (!down) return;
       if (down.act) { this.control(down.act, false); down = null; return; }
+      if (down.force) { down = null; return; }
       const p = this.toSvg(e);
       if (this.readonly) {
         if (!down.moved) { const c = this.hitChip(p.x, p.y); if (c) this.hooks.select({ kind: 'chip', id: c.id }); }
