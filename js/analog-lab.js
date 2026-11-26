@@ -539,7 +539,8 @@ function renderParts() {
     el('dt', {}, '741'), el('dd', {}, 'click where it should straddle the channel'),
     el('dt', {}, 'Wire'), el('dd', {}, 'drag from any free hole or terminal to another'),
     el('dt', {}, 'Remove'), el('dd', {}, 'right-click, or select and press Del. On a phone, tap it and use Delete'),
-    el('dt', {}, 'On a phone'), el('dd', {}, 'the part waits as a preview: drag its ends to adjust, then tap Place'))));
+    el('dt', {}, 'On a phone'), el('dd', {}, 'the part waits as a preview: drag its ends to adjust, then tap Place'),
+    el('dt', {}, 'Locked board'), el('dd', {}, 'stray swipes never move it. Zoom with a pinch, Ctrl + scroll or + / −. Move it with two fingers, or Space + drag. The lock button turns this off'))));
   host.replaceChildren(...items);
 }
 function partButton(type, value, color, label, withValue, chip) {
