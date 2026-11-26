@@ -235,6 +235,19 @@ export class AnalogBoard {
     }
     return best ? holeId(best, c) : null;
   }
+  // the bare wire of a two-lead part, between its body and a hole, grabs that end
+  legAt(x, y) {
+    const part = this.hitPart(x, y);
+    if (!part || isDip(part.type) || THREE.includes(part.type)) return null;
+    const [A, B] = part.holes.map(pointXY);
+    const len = Math.hypot(B.x - A.x, B.y - A.y) || 1;
+    const along = ((x - A.x) * (B.x - A.x) + (y - A.y) * (B.y - A.y)) / len;
+    const body = { D: 9, Z: 9, LED: 7, C: 6.5 }[part.type] ?? Math.min(14, len / 2 - 3);
+    if (along < len / 2 - body - 1) return { part, idx: 0 };
+    if (along > len / 2 + body + 1) return { part, idx: 1 };
+    return null;
+  }
+
   hitPart(x, y) {
     const near = this.tol(6, 14);
     for (const p of this.t.parts) {
@@ -273,9 +286,10 @@ export class AnalogBoard {
       down = { x: e.clientX, y: e.clientY, vb: { ...this.vb }, moved: false, p, pt };
       if (!this.readonly && this.mode !== 'place') {
         const onLead = pt && this.t.occupied().get(pt)?.part;
-        if (onLead && !isDip(onLead.type)) {
+        const leg = onLead && !isDip(onLead.type) ? { part: onLead, idx: onLead.holes.indexOf(pt) } : this.legAt(p.x, p.y);
+        if (leg) {
           // grab one leg: drag it to any free hole (a short across one strip is allowed)
-          down.lead = { part: onLead, idx: onLead.holes.indexOf(pt) };
+          down.lead = leg;
         } else {
           const part = this.hitPart(p.x, p.y);
           if (part && !onLead) { down.part = part; down.orig = isDip(part.type) ? part.col : part.holes.slice(); down.row0 = this.nearestRow(p.y); }
@@ -567,6 +581,11 @@ export class AnalogBoard {
 
   onHover(p, target) {
     const pt = this.hitPoint(p.x, p.y);
+    if (!this.readonly && this.mode !== 'place') {
+      const occ = pt && this.t.occupied().get(pt)?.part;
+      const grab = (occ && !isDip(occ.type)) || this.legAt(p.x, p.y) ? 'grab' : this.hitPart(p.x, p.y) ? 'move' : '';
+      if (this.svg.style.cursor !== grab) this.svg.style.cursor = grab;
+    }
     const wire = target.closest?.('[data-wire]');
     const part = pt && !APADS[pt] && this.t.occupied().get(pt)?.part ? null : this.hitPart(p.x, p.y);
     const key = (pt || '') + '|' + (wire?.dataset.wire || '') + '|' + (part?.id || '');
