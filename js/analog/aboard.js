@@ -1,6 +1,7 @@
 // Analog trainer renderer and pointer handling.
 import { svg, fmtSI } from '../shared/site.js';
 import { addPinch } from '../shared/pinch.js';
+import { addViewControls } from '../shared/viewlock.js';
 import {
   VIEW, APADS, COLS, ROWS, TOP_ROWS, BOT_ROWS, RAIL_ROWS, colX, holeId, railHasHole,
   parsePoint, pointXY, baseNode, partHoles, opampPin, PARTS, LED_RGB, partLabel, describePoint, DIP8, THREE, LEG_NAMES, isDip, dipCount,
@@ -275,7 +276,7 @@ export class AnalogBoard {
     let down = null;
     this.resetGesture = () => { down = null; this.pending = null; this.firstHole = null; this.renderOverlay(); };
     addPinch(this);
-    s.addEventListener('wheel', (e) => { e.preventDefault(); const p = this.toSvg(e); this.zoom(e.deltaY > 0 ? 1.12 : 1 / 1.12, p.x, p.y); }, { passive: false });
+    addViewControls(this);
     s.addEventListener('pointerdown', (e) => {
       if (e.button === 2) return;
       const act = e.target.closest?.('[data-act]');
@@ -283,7 +284,9 @@ export class AnalogBoard {
       this.touch = e.pointerType === 'touch' || e.pointerType === 'pen';
       const p = this.toSvg(e);
       const pt = this.hitPoint(p.x, p.y);
-      down = { x: e.clientX, y: e.clientY, vb: { ...this.vb }, moved: false, p, pt };
+      down = { x: e.clientX, y: e.clientY, lastY: e.clientY, vb: { ...this.vb }, moved: false, p, pt, touch: this.touch };
+      // Space + drag or the middle button always moves the board, locked or not
+      if (this.forcePan(e)) { e.preventDefault(); down.force = true; s.setPointerCapture(e.pointerId); return; }
       if (!this.readonly && this.mode !== 'place') {
         const onLead = pt && this.t.occupied().get(pt)?.part;
         const leg = onLead && !isDip(onLead.type) ? { part: onLead, idx: onLead.holes.indexOf(pt) } : this.legAt(p.x, p.y);
@@ -307,9 +310,15 @@ export class AnalogBoard {
         const dx = e.clientX - down.x, dy = e.clientY - down.y;
         if (!down.moved && dx * dx + dy * dy > 30) down.moved = true;
         if (down.moved) {
-          if (this.readonly || (!down.pt && !down.part)) {
-            const r = s.getBoundingClientRect(), k = down.vb.w / r.width;
-            this.vb.x = down.vb.x - dx * k; this.vb.y = down.vb.y - dy * k; this.applyView();
+          if (down.force || this.readonly || (!down.pt && !down.part)) {
+            if (down.force || this.dragPans()) {
+              const r = s.getBoundingClientRect(), k = down.vb.w / r.width;
+              this.vb.x = down.vb.x - dx * k; this.vb.y = down.vb.y - dy * k; this.applyView();
+            } else if (down.touch) {
+              // locked: a one-finger swipe scrolls the page, the board stays where it is
+              this.lockedTouchScroll(down.lastY - e.clientY);
+              down.lastY = e.clientY;
+            } else this.lockedHint();
           } else if (this.mode === 'place') {
             if (down.pvIdx != null) this.dragPreviewEnd(down.pvIdx, p);
             else if (down.pt && !APADS[down.pt] && !isDip(this.place.type) && !THREE.includes(this.place.type)) this.firstHole = down.pt;
@@ -327,6 +336,7 @@ export class AnalogBoard {
     s.addEventListener('pointerup', (e) => {
       if (!down) return;
       const d = down; down = null;
+      if (d.force) return;
       const p = this.toSvg(e);
       const pt = this.hitPoint(p.x, p.y);
       if (this.readonly) {
