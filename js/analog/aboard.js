@@ -203,6 +203,17 @@ export class AnalogBoard {
     const h = w / a;
     this.vb = { x: 30, y: 346 - h / 2, w, h }; this.applyView();
   }
+  // phone: zoom until holes sit about a fingertip apart, keeping the current spot centred
+  comfortZoom() {
+    const r = this.svg.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0)) return;
+    const upp = P / 24;
+    const w = Math.max(220, r.width * upp), h = w * (r.height / r.width);
+    if (this.vb.w <= w * 1.05) return;
+    const cx = Math.max(36 + w / 2, Math.min(976 - w / 2, this.vb.x + this.vb.w / 2));
+    this.vb = { x: cx - w / 2, y: 346 - h / 2, w, h };
+    this.applyView();
+  }
   toSvg(e) { const pt = this.svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(this.svg.getScreenCTM().inverse()); }
 
   // board units per screen pixel: a finger needs a bigger catch radius than a mouse
@@ -602,7 +613,7 @@ export class AnalogBoard {
         const where = this.preview.holes ? this.preview.holes.join(' → ') : 'across the channel';
         html = `<div class="dock-txt"><b>${name(this.place)}</b><span>${where}${this.preview.holes && !THREE.includes(this.preview.type) ? ' · drag an end to adjust' : ''}</span></div>${btn('redo', 'Cancel')}${btn('place', 'Place', 'is-go')}`;
       } else if (this.touch) {
-        html = `<div class="dock-txt"><b>${name(this.place)}</b><span>${isDip(this.place.type) ? 'Tap where the chip should sit' : THREE.includes(this.place.type) ? 'Tap the hole for the middle leg' : 'Tap a hole, or drag hole to hole'}</span></div>${btn('stop', 'Done')}`;
+        html = `<div class="dock-txt"><b>${name(this.place)}</b><span>${isDip(this.place.type) ? 'Tap where the chip should sit' : THREE.includes(this.place.type) ? 'Tap the hole for the middle leg' : 'Tap a hole · two fingers to pan or zoom'}</span></div>${btn('stop', 'Done')}`;
       }
     } else if (this.touch && this.selected) {
       const isWire = this.selected.kind === 'wire';
