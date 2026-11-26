@@ -152,3 +152,9 @@
 }
 .hero > .wrap { position: relative; }
 :root[data-theme="dark"] .hero { background-color: var(--bg); }
+
+/* practice card: title and text stacked in the middle column, button on the right */
+.entry__card--main .entry__title { grid-column: 2; grid-row: 1; }
+.entry__card--main .entry__text { grid-column: 2; grid-row: 2; }
+.entry__card--main .entry__go { grid-column: 3; grid-row: 1 / span 2; }
+@media (max-width: 860px) { .entry__card--main .entry__go { grid-column: 1 / -1; grid-row: 3; } }
