@@ -29,6 +29,7 @@ const refBench = new AnalogBench($('#refHost'), {
   onChange: (b, why) => { if (why === 'tick') { liveMeters(b, $('#refTry')); drawScope(b, $('#refScope canvas')); } },
 });
 const miniBench = new AnalogBench($('#miniHost'), { readonly: true, notify });
+const PHONE = matchMedia('(max-width: 760px)');
 const myBench = new AnalogBench($('#myHost'), {
   notify,
   onSelect: (sel, b) => {
@@ -43,6 +44,21 @@ const myBench = new AnalogBench($('#myHost'), {
 });
 $('#refTools').append(aBenchToolbar(refBench, { editable: false }));
 $('#myTools').append(aBenchToolbar(myBench, { editable: true }));
+// phone: the Edit button in the board's action bar opens the inspector below the board
+myBench.board.hooks.edit = (sel) => {
+  if (!sel) return;
+  inspect(sel, myBench, $('#myInspectBox'));
+  myTab('parts');
+  $('#myInspectBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+// phone: after picking a part from the list below, bring the breadboard back into view
+function showBoardForPlacing() {
+  if (!PHONE.matches && !myBench.board.touch) return;
+  const pane = $('#myHost').closest('.pane');
+  pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (myBench.board.vb.w > 900) myBench.board.focusBreadboard();
+}
+
 
 // ------------------------------------------------------------------ sidebar / tabs
 const sideItems = AEXPERIMENTS.map(e => ({ id: e.id, title: e.title, group: e.group, sub: bomShort(e) }));
@@ -115,8 +131,9 @@ function open(e, wantView) {
     $('#crumbGroup').textContent = e.group;
     $('#title').textContent = e.title;
     $('#aim').textContent = e.aim;
-    $('#split').classList.remove('ref-hidden');
-    $('#showRef').hidden = true; $('#hideRef').hidden = false;
+    // a phone has room for one board: start with the reference tucked away
+    $('#split').classList.toggle('ref-hidden', PHONE.matches);
+    $('#showRef').hidden = !PHONE.matches; $('#hideRef').hidden = false;
     renderOverview(e);
     refSteps = buildSteps(e);
     refBench.setWindow(e.window);
@@ -468,6 +485,7 @@ function renderParts() {
       if (!on) { myBench.board.setPlace(null); return; }
       ev.currentTarget.setAttribute('aria-pressed', 'true');
       myBench.board.setPlace({ value: PARTS[spec.type].def, color: 'red', ...spec });
+      showBoardForPlacing();
       $('#myStatus').textContent = isDip(spec.type) ? 'Tap where the chip should straddle the channel.' : THREE.includes(spec.type) ? `Tap the hole for the middle leg (${LEG_NAMES[spec.type][1]}).` : 'Tap a hole to drop it in, or drag from one hole to another. Esc stops placing.';
     },
   }, label))));
@@ -515,10 +533,12 @@ function renderParts() {
   items.push(el('div', { class: 'keys', style: 'margin-top:16px' }, el('p', { class: 'parts-group' }, 'How to build'), el('dl', {},
     el('dt', {}, 'Place a part'), el('dd', {}, 'pick it, then tap a hole. Drag from hole to hole to choose the length'),
     el('dt', {}, 'Move a part'), el('dd', {}, 'drag its body to new holes'),
+    el('dt', {}, 'Move one end'), el('dd', {}, 'drag a leg to any free hole. Both legs in one strip is allowed; the part is then shorted'),
     el('dt', {}, 'Transistor'), el('dd', {}, 'click the hole for the middle (base) leg'),
     el('dt', {}, '741'), el('dd', {}, 'click where it should straddle the channel'),
-    el('dt', {}, 'Wire'), el('dd', {}, 'drag from any hole, lead or terminal to another'),
-    el('dt', {}, 'Remove'), el('dd', {}, 'right-click, or select and press Del'))));
+    el('dt', {}, 'Wire'), el('dd', {}, 'drag from any free hole or terminal to another'),
+    el('dt', {}, 'Remove'), el('dd', {}, 'right-click, or select and press Del. On a phone, tap it and use Delete'),
+    el('dt', {}, 'On a phone'), el('dd', {}, 'the part waits as a preview: drag its ends to adjust, then tap Place'))));
   host.replaceChildren(...items);
 }
 function partButton(type, value, color, label, withValue, chip) {
@@ -532,6 +552,7 @@ function partButton(type, value, color, label, withValue, chip) {
       if (!on) { myBench.board.setPlace(null); return; }
       ev.currentTarget.setAttribute('aria-pressed', 'true');
       myBench.board.setPlace({ type, chip, value: value ?? pk.value, color: color ?? pk.color });
+      showBoardForPlacing();
       $('#myStatus').textContent = isDip(type) ? 'Tap where the chip should straddle the channel.' : THREE.includes(type) ? `Tap the hole for the middle leg (${LEG_NAMES[type][1]}).` : 'Tap a hole to drop it in, or drag from one hole to another. Esc stops placing.';
     },
   }, el('span', { class: 'ico', html: `<svg viewBox="0 0 48 22">${ICONS[type] || ICONS.OA}</svg>` }), el('span', { class: 'nm' }, label));

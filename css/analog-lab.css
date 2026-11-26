@@ -123,3 +123,9 @@
 .howto summary { cursor: pointer; font-weight: 600; }
 .howto ul { margin: 8px 0 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--ink-2); }
 .howto i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+
+/* leg handles and the touch placement preview */
+.lead-handle { fill: rgba(227, 154, 38, .18); stroke: var(--accent-hi); stroke-width: 1.6; pointer-events: none; }
+.lead-handle.is-preview { fill: rgba(61, 142, 240, .2); stroke: #6fb0ff; stroke-dasharray: 3 2; animation: handle-pulse 1.4s ease-in-out infinite; }
+@keyframes handle-pulse { 50% { stroke-opacity: .45; } }
+.apart.is-preview { opacity: .85; filter: drop-shadow(0 0 4px rgba(111, 176, 255, .9)); }
