@@ -440,3 +440,7 @@ body.has-full { overflow: hidden; }
   }
 }
 .tb-wide[aria-pressed="true"] { background: var(--accent-hi) !important; color: #1a1103 !important; }
+/* phones: the Landscape / Exit button leads the toolbar so it is never scrolled out of sight */
+@media (max-width: 760px), (max-height: 500px) {
+  .stage-toolbar .tool-group:has(.tb-wide) { order: -1; }
+}
