@@ -56,7 +56,7 @@ function showBoardForPlacing() {
   if (!PHONE.matches && !myBench.board.touch) return;
   const pane = $('#myHost').closest('.pane');
   pane.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  if (myBench.board.vb.w > 900) myBench.board.focusBreadboard();
+  myBench.board.comfortZoom();
 }
 
 
