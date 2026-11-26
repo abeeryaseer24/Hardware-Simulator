@@ -421,3 +421,11 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
 .lab-tabs button:hover { background: var(--surface-2); border-bottom-color: transparent; }
 .lab-tabs button[aria-selected="true"] { background: var(--bg); border-color: var(--rule); border-top-color: var(--accent-hi); }
 .lab-head { background: var(--surface); border-bottom-color: var(--rule); }
+
+/* work area reads as an EDA sheet: fine snap-grid dots behind the board */
+.pane .board-host {
+  background-color: var(--stage);
+  background-image: radial-gradient(circle, rgba(150, 185, 215, .13) 1px, transparent 1.5px);
+  background-size: 16px 16px;
+  background-position: 8px 8px;
+}
