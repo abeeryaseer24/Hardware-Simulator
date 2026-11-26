@@ -35,6 +35,7 @@ const myBench = new AnalogBench($('#myHost'), {
   onSelect: (sel, b) => {
     if (sel?.kind === 'placed') { $$('.part-row').forEach(x => x.setAttribute('aria-pressed', 'false')); return; }
     if (sel) { inspect(sel, b, $('#myInspectBox')); myTab('parts'); }
+    else $('#myInspectBox')?.replaceChildren();
   },
   onHover: (h, b) => hoverStatus(h, b, $('#myStatus')),
   onChange: (b, why) => {
