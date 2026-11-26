@@ -5,20 +5,20 @@
 
 :root {
   /* interaction: solder-mask teal */
-  --brand: #0f5c52;
-  --brand-hi: #13776a;
-  --brand-ink: #083b35;
-  --brand-tint: #e2eeeb;
+  --brand: #137a6c;
+  --brand-hi: #1a9483;
+  --brand-ink: #0a3f38;
+  --brand-tint: rgba(26, 148, 131, .1);
   /* measurement / attention: signal amber */
   --accent: #c47f12;
   --accent-hi: #e39a26;
   --accent-tint: #f9f0e0;
 
   /* graphite neutrals */
-  --bg: #e9ecee;
-  --surface: #fbfcfc;
-  --surface-2: #f2f4f5;
-  --surface-3: #e3e7ea;
+  --bg: #eef1f0;
+  --surface: #ffffff;
+  --surface-2: #f5f7f6;
+  --surface-3: #e8ecea;
   --ink: #101418;
   --ink-2: #39424a;
   --muted: #646e77;
@@ -72,6 +72,24 @@
   --shadow-2: 0 10px 30px -14px rgba(16, 20, 24, .35), 0 1px 3px rgba(16, 20, 24, .08);
   --shadow-lift: var(--shadow-2);
   --focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand-hi);
+  /* glass, light: white frosted panes over soft teal light */
+  --glow: 26, 148, 131;
+  --glow-a: .12;
+  --glass: rgba(255, 255, 255, .55);
+  --glass-hi: rgba(255, 255, 255, .78);
+  --glass-hover: rgba(255, 255, 255, .96);
+  --glass-edge: rgba(12, 22, 26, .11);
+  --glass-line: rgba(255, 255, 255, .95);
+  --glass-solid: rgba(248, 250, 250, .88);
+  --glass-faint: rgba(255, 255, 255, .4);
+  --glass-shadow: 0 1px 2px rgba(12, 22, 26, .05), 0 14px 34px -22px rgba(12, 22, 26, .28);
+  --field: rgba(255, 255, 255, .72);
+  --on-glow: var(--brand-ink);
+  --label: #5b7570;
+  --bar-bg: rgba(248, 250, 250, .72);
+  --bar-ink: #48535a;
+  --bar-ink-strong: #0d1417;
+  --bar-edge: rgba(12, 22, 26, .08);
   color-scheme: light;
 }
 
@@ -103,9 +121,22 @@
   --plastic: #d9ded6;
   --plastic-shade: #bcc3ba;
   --low: #5b8be0;
+  --glow-a: .15;
   --glass: rgba(255, 255, 255, .045);
   --glass-hi: rgba(255, 255, 255, .075);
+  --glass-hover: rgba(255, 255, 255, .11);
   --glass-edge: rgba(255, 255, 255, .13);
+  --glass-line: rgba(255, 255, 255, .08);
+  --glass-solid: rgba(10, 16, 19, .82);
+  --glass-faint: rgba(255, 255, 255, .025);
+  --glass-shadow: 0 20px 50px -30px rgba(0, 0, 0, .9);
+  --field: rgba(255, 255, 255, .04);
+  --on-glow: #fff;
+  --label: #6f8f8a;
+  --bar-bg: rgba(5, 9, 11, .6);
+  --bar-ink: #98a2ab;
+  --bar-ink-strong: #fff;
+  --bar-edge: rgba(255, 255, 255, .07);
   --shadow-1: inset 0 1px 0 rgba(255, 255, 255, .06);
   --shadow-2: 0 24px 60px -24px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .1);
   color-scheme: dark;
