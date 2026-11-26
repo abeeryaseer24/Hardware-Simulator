@@ -444,3 +444,10 @@ body.has-full { overflow: hidden; }
 @media (max-width: 760px), (max-height: 500px) {
   .stage-toolbar .tool-group:has(.tb-wide) { order: -1; }
 }
+
+/* view lock: the button reads as a lit state when locked; Space shows a grab hand */
+.tool-group .tb-lock[aria-pressed="true"] { color: #8fe6d8; }
+.tool-group .tb-lock[aria-pressed="true"] svg { filter: drop-shadow(0 0 4px rgba(42, 165, 151, .8)); }
+.tool-group .tb-lock[aria-pressed="false"] { color: #f2c57a; }
+svg.is-spacepan, svg.is-spacepan * { cursor: grab !important; }
+svg.is-spacepan:active, svg.is-spacepan:active * { cursor: grabbing !important; }
