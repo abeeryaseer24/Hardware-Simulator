@@ -48,6 +48,7 @@ const FILES = [
   "js/shared/pinch.js",
   "js/shared/share.js",
   "js/shared/wide.js",
+  "js/shared/viewlock.js",
   "js/shared/site.js",
   "js/toolkit.js",
   "kmap.html",
