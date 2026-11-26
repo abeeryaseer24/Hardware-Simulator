@@ -414,3 +414,10 @@ body[data-workbench="1"] .lab-head { padding-bottom: 12px; }
 .panel-tabs button { border: 1px solid transparent; border-bottom: 0; border-top: 2px solid transparent; border-radius: var(--r-sm) var(--r-sm) 0 0; margin-bottom: -1px; padding-top: 9px; }
 .panel-tabs button:hover { background: color-mix(in srgb, var(--surface) 55%, transparent); }
 .panel-tabs button[aria-selected="true"] { background: var(--surface); border-color: var(--rule-strong); border-top-color: var(--brand-hi); border-bottom: 1px solid var(--surface); }
+
+/* lab view tabs read as editor document tabs */
+.lab-tabs { gap: 2px; }
+.lab-tabs button { border: 1px solid transparent; border-bottom: 0; border-top: 2px solid transparent; border-radius: var(--r-sm) var(--r-sm) 0 0; padding: 8px 14px 9px; }
+.lab-tabs button:hover { background: var(--surface-2); border-bottom-color: transparent; }
+.lab-tabs button[aria-selected="true"] { background: var(--bg); border-color: var(--rule); border-top-color: var(--accent-hi); }
+.lab-head { background: var(--surface); border-bottom-color: var(--rule); }
